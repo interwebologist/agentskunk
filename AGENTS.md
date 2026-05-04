@@ -1,3 +1,42 @@
+# AGENTS.md: Autonomous Execution Protocol
+
+## 1. Operating Mission
+Your goal is to complete features from start to PR autonomously. You have permission to read the repo, create branches, write code, and execute the verification script. 
+
+## 2. The Hybrid Workflow (Human vs. Agent)
+To prevent interference with human developers:
+- **Agent Domain**: You only work on branches prefixed with `agent/` (e.g., `agent/add-login-api`).
+- **Human Domain**: Never modify `main`, `master`, or branches without the `agent/` prefix unless explicitly told.
+- **Hand-off**: If you encounter an "Edge Case" (defined as a design choice with >2 viable options or missing API keys), stop and leave a comment in `TASK_STATUS.md`.
+
+## 3. Step-by-Step Execution Path
+Follow this linear path for every task:
+
+   - Map the dependencies. Identify which files need modification.
+3. **Execution Loop**:
+   - Write/Modify code.
+   - Run verification: `python scripts/verify.py`.
+   - **IF FAIL**: Read JSON error output -> Patch code -> Re-run `scripts/verify.py`.
+   - **IF PASS**: Proceed to Step 4.
+4. **Final Pull Request**:
+   - You are authorized to push to origin and create a PR.
+   - **Mandatory PR Body**: You must include the exact string: 
+     `✅ AUTOMATED VERIFICATION: ALL TESTS AND LINTS PASSED.`
+
+## 4. PR Content Template
+When opening a PR, the description must follow this structure:
+- **Summary**: Brief description of changes.
+- **Verification Result**: (Insert the Mandatory string from Step 3).
+- **Files Modified**: List of changed files.
+- **Remaining Debt**: Any minor cleanup items left for humans.
+
+## 5. Constraints
+- **No Hallucinations**: If a library is not in `requirements.txt` or `pyproject.toml`, do not use it.
+- **Silent Correction**: Do not ask for permission to fix linting errors; just fix them.
+- **Exit Condition**: If `scripts/verify.py` fails 3 times on the same error, stop and report a "Blocker" in the PR as a draft.
+
+
+
 # OpenCode Agent Directives
 
 ## 1. Goal
