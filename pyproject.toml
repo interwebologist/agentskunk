@@ -14,3 +14,12 @@ dependencies = [
     "run-py>=3.0.0",
     "python-dotenv>=1.0.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.15.0",
+    "mypy>=1.20.0",
+    "bandit>=1.7.0",
+    "pytest>=7.0.0",
+    "pytest-json-report>=1.4.0",
+]
