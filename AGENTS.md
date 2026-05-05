@@ -26,14 +26,13 @@ Follow this linear path for every task:
 ## 4. PR Content Template
 When opening a PR, the description must follow this structure:
 - **Summary**: Brief description of changes.
-- **Verification Result**: (Insert the Mandatory string from Step 3).
+- **Verification Result**: (Insert the Mandatory string from Step 3 only if it actually passed).
 - **Files Modified**: List of changed files.
-- **Remaining Debt**: Any minor cleanup items left for humans.
 
 ## 5. Constraints
-- **No Hallucinations**: If a library is not in `requirements.txt` or `pyproject.toml`, do not use it.
-- **Silent Correction**: Do not ask for permission to fix linting errors; just fix them.
-- **Exit Condition**: If `scripts/verify.py` fails 3 times on the same error, stop and report a "Blocker" in the PR as a draft.
+- **No Hallucinations**: If a library is being used do not build from memory. Search the offical docs online and implement based off real up to date info 
+- **Silent Correction**: Do not ask for permission to fix linting errors; just fix them
+- **Exit Condition**: If `scripts/verify.py` fails 6 times on the same error, stop and report a "Blocker" in the PR as a draft.
 
 
 
@@ -74,11 +73,8 @@ Follow these exact steps for every task:
 ## Tech
 - Python 3.13
 - AI: 192.168.1.33:8080/v1
-- Tool: get_weather (fake)
-- Stack: FastAPI + LangGraph + OpenAI
+- Tool: get_weather (now with real weather)
+- Stack: FastAPI + LangGraph + Using OpenAI style llama-server backend
 
 ## Notes
-- No tests
-- No lint
-- deps: .venv (uv)
 - Fix deps: uv sync
