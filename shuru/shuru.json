@@ -1,0 +1,20 @@
+{
+  "allow_net": true,
+  "allow_host_writes": true,
+  "cpus": 4,
+  "memory": 4096,
+  "disk_size": 8192,
+  "mounts": [
+    "./:/workspace:rw"
+  ],
+  "ports": [
+    "8000:8000",
+    "5173:5173"
+  ],
+  "secrets": {
+    "GITHUB_TOKEN": {
+      "from": "GITHUB_AGENT1_TOKEN",
+      "hosts": ["api.github.com"]
+    }
+  }
+}
