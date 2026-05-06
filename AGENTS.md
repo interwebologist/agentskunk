@@ -15,66 +15,41 @@ Follow this linear path for every task:
    - Map the dependencies. Identify which files need modification.
 3. **Execution Loop**:
    - Write/Modify code.
-   - Run verification: `python scripts/verify.py`.
-   - **IF FAIL**: Read JSON error output -> Patch code -> Re-run `scripts/verify.py`.
+   - Run verification after every script or json change: `python scripts/verify.py`.
+   - **IF FAIL**: Read error output -> Patch code -> Re-run `scripts/verify.py`.
    - **IF PASS**: Proceed to Step 4.
-4. **Final Pull Request**:
-   - You are authorized to push to origin and create a PR.
-   - **Mandatory PR Body**: You must include the exact string: 
-     `✅ AUTOMATED VERIFICATION: ALL TESTS AND LINTS PASSED.`
 
 ## 4. PR Content Template
-When opening a PR, the description must follow this structure:
+
+If asked to open PR, the description must follow this structure:
 - **Summary**: Brief description of changes.
 - **Verification Result**: (Insert the Mandatory string from Step 3 only if it actually passed).
 - **Files Modified**: List of changed files.
 
 ## 5. Constraints
-- **No Hallucinations**: If a library is being used do not build from memory. Search the offical docs online and implement based off real up to date info 
-- **Silent Correction**: Do not ask for permission to fix linting errors; just fix them
-- **Exit Condition**: If `scripts/verify.py` fails 6 times on the same error, stop and report a "Blocker" in the PR as a draft.
+- **No Hallucinations**: If a library is being used do not build from memory. Search the offical docs online and implement based off real up to date info if you fail to an
+error message to help in in a max of 3 edits to code file
+- **Exit Condition**: If `scripts/verify.py` fails 6 times on the same error, stop and search the web for an answer. If you fail 
+again stop and report a "blocker" with details for your teammate to help get you unstuck.
+- **Stay Focused:** Only touch files needed for the current prompt.
+- **Small Steps:** Make changes in small, logical chunks.
 
-
-
-# OpenCode Agent Directives
-
-## 1. Goal
-Execute tasks, verify them, and open a PR. Work autonomously. Do not wait for human input unless stuck.
-
-## 2. Rules of Engagement
-* **Read First:** Always read `opencode.json` ignores to avoid scanning junk files.
-* **Stay Focused:** Only touch files needed for the current prompt.
-* **Small Steps:** Make changes in small, logical chunks.
-
-## 3. Workflow to PR
-Follow these exact steps for every task:
-
-1. **Analyze:** Review the prompt and explore relevant code.
-2. **Execute:** Write the required code and tests.
-3. **Verify:** Run the project's test suite (e.g., `npm test`, `pytest`, `cargo test`).
-4. **Fix:** If tests fail, read the logs, fix the code, and re-run until they pass.
-5. **Format & Lint:** Run formatting and linting tools. Fix any errors.
-6. **Commit:** Stage changes. Write clear, concise commit messages.
-7. **Push & PR:** Push the branch to the remote repo. Create a Pull Request summarizing the changes and confirming tests pass.
-
-# SkunkAgent Repo Rules
-
-## Commands
+## Useful Commands
 - Start: uv run python run.py
-- Use: POST localhost:8000/apply {"text":"..."}
+- Use / test the endpoint from "uv run" : POST localhost:8000/apply {"text":"..."}
 - Stop: Ctrl+C
 
 ## Files
 - run.py: starts server
-- api.py: web stuff
-- agent.py: brain
+- api.py: endpoint the user will use 
+- agent.py: brain React agent with tools
 - deps: uv
 
 ## Tech
 - Python 3.13
-- AI: 192.168.1.33:8080/v1
-- Tool: get_weather (now with real weather)
+- AI LLM the agent.py will use : 192.168.1.33:8080/v1
+- Tools are in agent.py for now. May move.
 - Stack: FastAPI + LangGraph + Using OpenAI style llama-server backend
 
 ## Notes
-- Fix deps: uv sync
+- To fix deps: uv sync
