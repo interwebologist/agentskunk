@@ -1,6 +1,6 @@
 #!/bin/bash
-# run-opencode-agent.sh
-# Usage: ./run-opencode-agent.sh [--help] [--force-worktree] feature-branch-name
+# run-agent.sh
+# Usage: ./run-agent.sh [--help] [--force-worktree] feature-branch-name
 
 # Show help message
 show_help() {

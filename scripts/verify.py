@@ -1,6 +1,7 @@
 import subprocess
 import json
 import sys
+import os
 
 
 def run_check(name, cmd):
@@ -23,12 +24,50 @@ def run_check(name, cmd):
     }
 
 
+def check_json_files():
+    """Check all JSON files for valid syntax."""
+    print("Checking JSON files...")
+    json_files = []
+    for root, dirs, files in os.walk('.'):
+        # Skip hidden directories and common build/cache directories
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules', 'dist', 'build']]
+        for file in files:
+            if file.endswith('.json'):
+                json_files.append(os.path.join(root, file))
+    
+    errors = []
+    for json_file in json_files:
+        try:
+            with open(json_file, 'r') as f:
+                json.load(f)
+        except json.JSONDecodeError as e:
+            errors.append(f"{json_file}: {str(e)}")
+        except Exception as e:
+            errors.append(f"{json_file}: {str(e)}")
+    
+    if errors:
+        return {
+            "tool": "JSON Syntax Check",
+            "success": False,
+            "output": "\\n".join(errors),
+            "error": ""
+        }
+    else:
+        return {
+            "tool": "JSON Syntax Check",
+            "success": True,
+            "output": f"Passed ({len(json_files)} files checked)",
+            "error": ""
+        }
+
+
 def main():
     # 1. Ruff: Linting & Formatting (2026 Standard)
     # Using --output-format json as per v0.15+ docs
     checks = [
         run_check("Linter (Ruff)", "ruff check --output-format json ."),
         run_check("Formatter (Ruff)", "ruff format --check ."),
+        check_json_files(),  # Add JSON syntax check
     ]
 
     # 2. Mypy: Type Checking (v1.20)
