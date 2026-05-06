@@ -1,11 +1,16 @@
 # Skunk Agent - Agent with Defenses
 
-skunk agent is WIP repo that is being built with a microVM'd (sandboxed) agent using either Pi/Opencode and local models running on the Strix Halo 128GB AI APU locally. Agent cuts a PR to a branch protected repo for "Human in the loop" (HITL) review. Agents uses linting, ruff and other guardrails along the way. CI via github actions builds gates into the agent PR for further guardrails. This is me practicing what I believe is the future of the agentic dev experience.
+- skunk agent is WIP repo that is being built with a microVM'd (sandboxed) agent using either Pi/Opencode and local models running on the Strix Halo 128GB AI APU locally. 
+- Agent cuts a PR to a branch protected repo for "Human in the loop" (HITL) review. Agents uses linting, ruff and other feedback verification scripts along the way. 
+- CI via github actions builds gates into the agent PR for further guardrails. This is me practicing what I believe is the future of the agentic dev experience.
+- Agent runs in a Ralph Loop as I engineer and plan the tasks for the next feature.
+- This is a test of the what I believe is the final form of the "fully augmented" engineer of the future.
 
-Agent runs in a Ralph Loop as I engineer and plan the tasks for the next feature. much like the  This is a test of the what I believe is the final form of the "fully augmented" engineer of the future. Its the opposite of a Utopia that wipes workers off the planet for billionares as well as a replacement for the "10x engineer" who also a lie
+# Project Focus 
 
- #Project Focus 
- Deployed Skunk Agent Main Focus. These may or may not end up being features in the end product, at this point these are just ideas. I will build a around security products that are better or not needed and add only what is needed be added to the agent.
+Deployed Skunk Agent Main Focus:
+
+These may or may not end up being features in the end product, at this point these are just ideas. I will build a around security products that are better or not needed and add only what is needed be added to the agent though I want this to deploy "secure"
 
 #### Normal Agent Stuff
 - add all agent stuff here. memory, web search
