@@ -5,19 +5,17 @@ Your goal is to complete features from start to PR autonomously. You have permis
 
 ## 2. The Hybrid Workflow (Human vs. Agent)
 To prevent interference with human developers:
-- **Agent Domain**: You only work on branches prefixed with `agent/` (e.g., `agent/add-login-api`).
+- **Agent Domain**: Your branch is setup for you. do need worry about creating one. 
 - **Human Domain**: Never modify `main`, `master`, or branches without the `agent/` prefix unless explicitly told.
 - **Hand-off**: If you encounter an "Edge Case" (defined as a design choice with >2 viable options or missing API keys), stop and leave a comment in `TASK_STATUS.md`.
 
 ## 3. Step-by-Step Execution Path
 Follow this linear path for every task:
-
    - Map the dependencies. Identify which files need modification.
 3. **Execution Loop**:
    - Write/Modify code.
-   - Run verification after every script or json change: `python scripts/verify.py`.
+   - Run verify after completing tasks and fix errors till the verify.py script passes `python scripts/verify.py`.
    - **IF FAIL**: Read error output -> Patch code -> Re-run `scripts/verify.py`.
-   - **IF PASS**: Proceed to Step 4.
 
 ## 4. PR Content Template
 
@@ -29,8 +27,9 @@ If asked to open PR, the description must follow this structure:
 ## 5. Constraints
 - **No Hallucinations**: If a library is being used do not build from memory. Search the offical docs online and implement based off real up to date info if you fail to an
 error message to help in in a max of 3 edits to code file
-- **Exit Condition**: If `scripts/verify.py` fails 6 times on the same error, stop and search the web for an answer. If you fail 
-again stop and report a "blocker" with details for your teammate to help get you unstuck.
+- **Exit Condition**: If `scripts/verify.py` fails 6 times on the same error, stop and search the web for 
+for the offical docs for that library then answer. If you fail again stop and report a "blocker" with 
+details for your teammate to help get you unstuck.
 - **Stay Focused:** Only touch files needed for the current prompt.
 - **Small Steps:** Make changes in small, logical chunks.
 

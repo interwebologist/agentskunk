@@ -31,6 +31,15 @@ These may or may not end up being features in the end product, at this point the
 #### Authentication & Authorization
 - **Ephemeral Secrets, indentity **: Employs short-lived tokens (e.g., AWS IAM Roles, HashiCorp Vault,github, okta, etc).Not Telegram... owned by the Russians or whoever has it now.
 
+## Quick Start for Autonomous Coding
+
+1. Set your GitHub token: `export GITHUB_AGENT1_TOKEN='your_token_here'`
+2. Source your shell: `source ~/.zshrc`
+3. Start agent: `./run-agent.sh feature-branch 1`
+4. Workspace ready at `../feature-branch` with Opencode running headless
+5. Use `shuru` directly in workspace for subsequent sessions
+6. Connect to Opencode: `curl -X POST localhost:8000/apply -H "Content-Type: application/json" -d '{"text":"your command"}'`
+
 ## Practicing What I Preach: The Fully Augmented Engineer 
 
 - Agent runs in a Ralph Loop as I engineer and plan/work the tasks for the next feature as architect , team lead , and project manager.
