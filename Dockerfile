@@ -12,7 +12,8 @@ RUN git config --global credential.helper store
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install opencode CLI
-RUN curl -fsSL https://opencode.ai/install | bash
+RUN curl -fsSL https://opencode.ai/install | bash && \
+    ln -s /root/.opencode/bin/opencode /usr/local/bin/opencode
 
 # Set working directory
 WORKDIR /app
