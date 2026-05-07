@@ -39,7 +39,12 @@ docker build -t opencode-sandbox .
 
 ### Run Agent in Sandbox
 ```bash
-docker run --rm -it -v /Users/ryan/AI/skunkagent-agent-worktree:/app -e GITHUB_AGENT1_TOKEN=${GITHUB_TOKEN} opencode-sandbox /root/.opencode/bin/opencode (or /bin/sh and run .loop.sh, write .spec.md 1st)
+docker run --rm -it -v /Users/ryan/AI/skunkagent-agent-worktree:/app -e GITHUB_AGENT1_TOKEN=${GITHUB_TOKEN} opencode-sandbox /bin/sh
+.loop.sh, write .spec.md 1st)
+```
+
+```bash
+docker exec -it opencode-sandbox /bin/sh
 ```
 
 *Note: Agent uses HTTP for GitHub pushes (fine-grained token). setup*
