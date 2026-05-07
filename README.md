@@ -47,4 +47,7 @@ docker run --rm -it -v /Users/ryan/AI/skunkagent-agent-worktree:/app -e GITHUB_A
 docker exec -it opencode-sandbox /bin/sh
 ```
 
-*Note: Agent uses HTTP for GitHub pushes (fine-grained token). setup*
+*Note: The Dockerfile now includes git installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
+
+To run the container with your GitHub token:
+docker run -it -e GITHUB_TOKEN=your_token_here skunkagent
