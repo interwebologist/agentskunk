@@ -7,3 +7,6 @@ bun.lock
 .env.local
 .env.*.local
 opencode*.json
+__pycache__/
+.report.json
+.opencode/ 
