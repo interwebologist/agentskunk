@@ -3,8 +3,8 @@
 set -e
 for ((i=1; i<=$1; i++)); do
   result=$(opencode --yes -p 
-    "@.spec.md @.stat.txt \
-    1. Read the .spec.md and .stat.txt file \
+    "@.plan.md @.stat.txt \
+    1. Read the .plan.md and .stat.txt file \
     2. Id the next highest-priority task. \
     3. Implement it, run tests/linting, and commit changes. \
     4. Update .stat.txt. \
