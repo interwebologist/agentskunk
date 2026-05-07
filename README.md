@@ -49,5 +49,8 @@ docker exec -it opencode-sandbox /bin/sh
 
 *Note: The Dockerfile now includes git installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
 
-To run the container with your GitHub token:
-docker run -it -e GITHUB_TOKEN=your_token_here skunkagent
+To run the container with your GitHub token (passing through from host):
+docker run -it -e GITHUB_TOKEN=${GITHUB_AGENT1_TOKEN} skunkagent
+
+Or if you prefer to use a different variable name on the host:
+docker run -it -e GITHUB_TOKEN=your_actual_token_here skunkagent
