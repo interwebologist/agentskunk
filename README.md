@@ -24,33 +24,20 @@ These may or may not end up being features in the end product, at this point the
 
 ## Development with Agent Sandbox
 
-Set GITHUB_AGENT1_TOKEN
-
-### Setup Agent Worktree
-```bash
-cd skunkagent
-git worktree add -b agent/working ../skunkagent-agent-worktree
-```
-
 ### Build Docker Image
 ```bash
-docker build -t opencode-sandbox .
+docker build -t skunkagent .
 ```
 
-### Run Agent in Sandbox
+### Run Agent in Sandbox with GitHub Token
 ```bash
-docker run --rm -it -v /Users/ryan/AI/skunkagent-agent-worktree:/app -e GITHUB_AGENT1_TOKEN=${GITHUB_TOKEN} opencode-sandbox /bin/sh
-.loop.sh, write .spec.md 1st)
-```
-
-```bash
-docker exec -it opencode-sandbox /bin/sh
-```
-
-*Note: The Dockerfile now includes git installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
-
-To run the container with your GitHub token (passing through from host):
 docker run -it -e GITHUB_TOKEN=${GITHUB_AGENT1_TOKEN} skunkagent
+```
 
-Or if you prefer to use a different variable name on the host:
-docker run -it -e GITHUB_TOKEN=your_actual_token_here skunkagent
+The container will:
+1. Start and provide a shell prompt
+2. Have opencode CLI available (run `opencode --version` to verify)
+3. Have git installed and configured to use the GITHUB_TOKEN for authentication
+4. Automatically set up git credentials when GITHUB_TOKEN is provided
+
+*Note: The Dockerfile includes git installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
