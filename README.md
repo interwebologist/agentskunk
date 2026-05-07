@@ -1,6 +1,6 @@
 # Skunk Agent - Agent with Defenses
 
-# Project Focus 
+## Project Focus 
 
 These may or may not end up being features in the end product, at this point these are just ideas. I will build a around security products that are better or not needed and add only what is needed be added to the agent though I want this to deploy "secure"
 
@@ -17,16 +17,16 @@ These may or may not end up being features in the end product, at this point the
 
 #### Content & Execution Guardrails
 - **Input Guardrails**:
-    - "Police" LLM evaluates input for malicious intent.
-    - Canary trap words integrated to detect prompt injection.
-    - Ingress Guardrails check incoming data for social engineering; instantly rejects and blocks IPs attempting exploitation.
+  - "Police" LLM evaluates input for malicious intent.
+  - Canary trap words integrated to detect prompt injection.
+  - Ingress Guardrails check incoming data for social engineering; instantly rejects and blocks IPs attempting exploitation.
 - **Output Guardrails**:
-    - "Police" LLM reviews output for leaked secrets, sensitive data, or security threats.
-    - Egress Proxy reads all outflowing data; instantly kills connection upon detecting strings matching API keys, passwords, or PII. Enforces HTTP allow/deny URLs for network sandboxing.
+  - "Police" LLM reviews output for leaked secrets, sensitive data, or security threats.
+  - Egress Proxy reads all outflowing data; instantly kills connection upon detecting strings matching API keys, passwords, or PII. Enforces HTTP allow/deny URLs for network sandboxing.
 - **Agent Lifecycle & Resource Control**:
-    - Loop Detection: Implements cyclic graph checks or dumb checks like `message[-1]==message[-2]`. Can inject "dont do that again ! try something new" commands or break loops.
-    - Limits: Max iterations cap and a Time-To-Live (TTL) on every task (e.g., 60 seconds) with forced termination.
-    - Resource Quotas: CPU and RAM consumption limited to small, defined slices.
+  - Loop Detection: Implements cyclic graph checks or dumb checks like `message[-1]==message[-2]`. Can inject "dont do that again ! try something new" commands or break loops.
+  - Limits: Max iterations cap and a Time-To-Live (TTL) on every task (e.g., 60 seconds) with forced termination.
+  - Resource Quotas: CPU and RAM consumption limited to small, defined slices.
 
 #### Authentication & Authorization
 - **Ephemeral Secrets, indentity **: Employs short-lived tokens (e.g., AWS IAM Roles, HashiCorp Vault,github, okta, etc).Not Telegram... owned by the Russians or whoever has it now.
@@ -49,4 +49,34 @@ These may or may not end up being features in the end product, at this point the
 ### What is it
 - skunk agent is being built with a microVM'd (sandboxed) Ralph loop agent using either Pi/Opencode and local models running on the Strix Halo 128GB AI APU locally. 
 - Agent cuts a PR to a "main" branch protected repo for "Human in the loop" (HITL) review. Agents uses linting, ruff and other feedback verification scripts along the way. 
-- CI via github actions builds gates into the agent PR for further guardrails. 
+- CI via github actions builds gates into the agent PR for further guardrails.
+
+## Development with Agent Sandbox
+
+### Setup Agent Worktree
+```bash
+cd /Users/ryan/AI/skunkagent
+git worktree add -b agent/working ../skunkagent-agent-worktree
+```
+
+### Build Docker Image
+```bash
+docker build -t opencode-sandbox .
+```
+
+### Run Agent in Sandbox
+```bash
+docker run --rm -it -v /Users/ryan/AI/skunkagent-agent-worktree:/app -e GITHUB_TOKEN=${GITHUB_AGENT1_TOKEN} opencode-sandbox /root/.opencode/bin/opencode
+```
+
+*Note: Agent uses HTTP for GitHub pushes (fine-grained token), not SSH keys.*
+
+### Your Workflow (Main Repo)
+```bash
+cd /Users/ryan/AI/skunkagent
+# Edit, test, commit as usual
+```
+
+### Sync Changes
+- **From agent to you**: `git fetch && git merge agent/working`
+- **From you to agent**: In worktree: `git fetch && git merge main`
