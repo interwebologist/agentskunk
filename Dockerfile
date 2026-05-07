@@ -1,7 +1,7 @@
 FROM python:3.13-slim
 
-# Install uv, curl, and git
-RUN apt-get update && apt-get install -y curl git && rm -rf /var/lib/apt/lists/*
+# Install uv, curl, git, vim, and tmux
+RUN apt-get update && apt-get install -y curl git vim tmux && rm -rf /var/lib/apt/lists/*
 
 # Configure git to use GitHub token for HTTP endpoints automatically
 # This allows git to use the GITHUB_TOKEN environment variable for authentication
