@@ -24,7 +24,7 @@ for ((i=1; i<=iterations; i++)); do
   fi
   
   result=$(opencode run --dangerously-skip-permissions "$prompt")
-
+  
   echo "$result"
    
   # Check for completion
