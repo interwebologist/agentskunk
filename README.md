@@ -38,6 +38,7 @@ The container will:
 1. Start and provide a shell prompt
 2. Have opencode CLI available (run `opencode --version` to verify)
 3. Have git installed and configured to use the GITHUB_TOKEN for authentication
-4. Automatically set up git credentials when GITHUB_TOKEN is provided
+4. Have vim and tmux installed for editing and terminal multiplexing
+5. Automatically set up git credentials when GITHUB_TOKEN is provided
 
-*Note: The Dockerfile includes git installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
+*Note: The Dockerfile includes git, vim, tmux installation and automatic GitHub token configuration for HTTP endpoints. The agent will automatically use the GITHUB_TOKEN environment variable for git operations requiring authentication.*
