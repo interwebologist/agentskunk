@@ -5,7 +5,17 @@
 - **Exit Condition**: If `scripts/verify.py` fails 5 times on the same error you must search the error using Webfetch or riase a "BLOCKED" message 
 - **Stay Focused:** Only touch files needed for the current prompt.
 - **Small Steps:** Make changes in small, logical chunks.
-- **YOU MUST TEST EVERYTHING:** test everything you make and use the verify.py before ever commiting to repos
+- **YOU MUST TEST EVERYTHING:** test everything you make. see examples below 
+
+**Examples:**
+- if you add dockerfile entrypoint github username and email you must test the github endpoint
+- if you add a tool or function that contacts and endpoint you MUST prove the script works and the function does
+- if you add a Dockerfile you MUST test it works. 
+- if you create a Dockerfile entrypoint script you must get inside the container and check everything you scripted is working
+- test all code you write
+- test all configuation you write
+
+**Your Must Assume Everything you implement isn't working intill you test it**
 
 ## Useful Commands
 - Start: uv run python run.py
