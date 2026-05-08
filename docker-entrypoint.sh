@@ -2,11 +2,11 @@
 set -e
 
 # Set up git user and email for opencode agent (hardcoded)
-echo "Setting up git user name: opencode-agent"
-git config --global user.name "opencode-agent"
+echo "Setting up git user name: opencode-agent-420"
+git config --global user.name "opencode-agent-420"
 
-echo "Setting up git user email: agent@opencode.local"
-git config --global user.email "agent@opencode.local"
+echo "Setting up git user email: agent420@opencoder.local"
+git config --global user.email "agent420@opencoder.local"
 
 # Set up git credentials if GITHUB_TOKEN is provided
 if [ -n "$GITHUB_TOKEN" ]; then
