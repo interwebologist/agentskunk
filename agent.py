@@ -4,6 +4,7 @@ import json
 import subprocess
 import uuid
 import re
+from typing import List, Any
 from dotenv import load_dotenv
 from openai import OpenAI
 from ddgs import DDGS
@@ -24,7 +25,8 @@ def process_result(output: str, exit_code: int, limit: int = 1000) -> str:
     if len(output) > limit:
         os.makedirs("outputs", exist_ok=True)
         path = f"outputs/{uuid.uuid4().hex[:8]}.log"
-        with open(path, "w") as f: f.write(output)
+        with open(path, "w") as f:
+            f.write(output)
         return f"{status}: {output[:limit]}... [FULL LOG SAVED TO {path}]"
     
     return f"{status}: {output}" if output else status
@@ -37,14 +39,17 @@ def run_bash(command: str) -> str:
 def read_file(path: str) -> str:
     """Read a file."""
     try:
-        with open(path, "r") as f: return f.read()
-    except Exception as e: return f("[ERROR] {str(e)}")
+        with open(path, "r") as f:
+            return f.read()
+    except Exception as e:
+        return f"[ERROR] {str(e)}"
 
 
 def weather(loc: str):
     """Get weather for location."""
     geo = requests.get(f"https://geocoding-api.open-meteo.com/v1/search?name={loc}&count=1").json()
-    if not geo.get("results"): return f"{loc} not found."
+    if not geo.get("results"):
+        return f"{loc} not found."
     res = geo["results"][0]
     w = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={res['latitude']}&longitude={res['longitude']}&current_weather=true&hourly=temperature_2m&forecast_hours=25&temperature_unit=fahrenheit&timezone=auto").json()
     now = w["current_weather"]["temperature"]
@@ -77,7 +82,8 @@ def google_search(q: str, num: int = 10) -> str:
         response.raise_for_status()
         data = response.json()
         results = data.get("organic", [])
-        if not results: return "No organic results found."
+        if not results:
+            return "No organic results found."
         output = [f"Title: {r.get('title')}\nLink: {r.get('link')}\nSnippet: {r.get('snippet')}" for r in results]
         return "\n\n".join(output)
     except Exception as e:
@@ -97,14 +103,16 @@ def web_fetch(url: str) -> str:
                 if response.status_code == 200:
                     ext = filepath.split('.')[-1] if '.' in filepath else ''
                     return f"```{ext}\n{response.text}\n```"
-            except Exception: pass
+            except Exception:
+                pass
 
     try:
         response = requests.get(url, headers={
             "User-Agent": "Claude-User",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         }, timeout=10)
-        if response.status_code != 200: return f"Error: {response.status_code}"
+        if response.status_code != 200:
+            return f"Error: {response.status_code}"
         
         soup = BeautifulSoup(response.text, "html.parser")
         for el in soup(["script", "style", "nav", "footer", "header", "aside", "svg", "form"]):
@@ -113,6 +121,22 @@ def web_fetch(url: str) -> str:
         return md(str(soup), strip=['img', 'button'], heading_style="atx").strip()
     except Exception as e:
         return f"Error: {str(e)}"
+
+def clear_topic(new_topic: str = "") -> str:
+    """Clears the conversation history (except system prompt) and starts a new topic if provided."""
+    global CHAT_HISTORY
+    sys_prompt = None
+    if CHAT_HISTORY and CHAT_HISTORY[0].get("role") == "system":
+        sys_prompt = CHAT_HISTORY[0]
+    
+    CHAT_HISTORY = []
+    if sys_prompt:
+        CHAT_HISTORY.append(sys_prompt)
+    
+    if new_topic:
+        return f"Topic cleared. New topic: {new_topic}. Please start the conversation based on this."
+    
+    return "Topic cleared. Conversation history has been reset. Waiting for next user input."
 
 # Tool Registry
 TOOL_REGISTRY = {
@@ -175,6 +199,20 @@ TOOL_REGISTRY = {
             "properties": {"url": {"type": "string"}},
             "required": ["url"]
         }
+    },
+    "clear_topic": {
+        "func": clear_topic,
+        "description": "Clear the conversation history and start a new topic",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "new_topic": {
+                    "type": "string", 
+                    "description": "Optional: The new topic or query to start the conversation with after clearing."
+                }
+            },
+            "required": []
+        }
     }
 }
 
@@ -191,22 +229,55 @@ tools = [
     for name, cfg in TOOL_REGISTRY.items()
 ]
 
-def run(prompt: str):
-    msgs = [{"role": "user", "content": prompt}]
-    while True:
-        res = client.chat.completions.create(model=model, messages=msgs, tools=tools)
+# Global Configuration & State
+MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "90"))
+CHAT_HISTORY: List[Any] = []
+
+def load_system_prompt() -> str:
+    """Load system prompt from file."""
+    path = "prompts/system_prompt.md"
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return f.read().strip()
+    return ""
+
+def run(prompt: str, max_iterations: int = MAX_ITERATIONS) -> str:
+    global CHAT_HISTORY
+    
+    # Initialize history with system prompt if empty
+    if not CHAT_HISTORY:
+        sys_p = load_system_prompt()
+        if sys_p:
+            CHAT_HISTORY.append({"role": "system", "content": sys_p})
+            
+    CHAT_HISTORY.append({"role": "user", "content": prompt})
+    
+    iterations = 0
+    while iterations < max_iterations:
+        iterations += 1
+        res = client.chat.completions.create(model=model, messages=CHAT_HISTORY, tools=tools) # type: ignore
         msg = res.choices[0].message
-        msgs.append(msg)
+        
+        # Convert message to dict to keep history consistent and avoid mypy errors
+        CHAT_HISTORY.append(msg.model_dump(exclude_none=True))
 
         if not msg.tool_calls:
-            return msg.content
+            return str(msg.content)
 
         for call in msg.tool_calls:
-            func_name = call.function.name
-            if func_name in TOOL_REGISTRY:
-                args = json.loads(call.function.arguments)
-                out = TOOL_REGISTRY[func_name]["func"](**args)
-                msgs.append({"role": "tool", "tool_call_id": call.id, "content": out})
+            if call.type == "function":
+                func_name = call.function.name
+                if func_name in TOOL_REGISTRY:
+                    try:
+                        args = json.loads(call.function.arguments)
+                        func = TOOL_REGISTRY[func_name]["func"]
+                        if callable(func):
+                            out = func(**args)
+                            CHAT_HISTORY.append({"role": "tool", "tool_call_id": call.id, "content": out})
+                    except Exception as e:
+                        CHAT_HISTORY.append({"role": "tool", "tool_call_id": call.id, "content": f"Error: {str(e)}"})
+    
+    return "Error: Maximum iterations reached without final response."
 
 if __name__ == "__main__":
     print(run("Run a bash command that fails and outputs a lot of text."))
