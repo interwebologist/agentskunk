@@ -33,6 +33,13 @@ docker build -t skunkagent .
 ```bash
 docker run -it -e GITHUB_TOKEN=${GITHUB_AGENT1_TOKEN} skunkagent
 ```
+### Test skunk-agent
+
+```bash
+curl -X POST http://localhost:8000/apply \
+     -H "Content-Type: application/json" \
+     -d '{"text": "whats the weather in denver today ? "}'
+```
 
 The container will:
 1. Start and provide a shell prompt
