@@ -234,7 +234,11 @@ MAX_ITERATIONS = int(os.getenv("MAX_ITERATIONS", "90"))
 CHAT_HISTORY: List[Any] = []
 
 def load_system_prompt() -> str:
-    """Load system prompt from file."""
+    """Load system prompt from environment variable or file."""
+    env_prompt = os.getenv("SYSTEM_PROMPT")
+    if env_prompt:
+        return env_prompt.strip()
+    
     path = "prompts/system_prompt.md"
     if os.path.exists(path):
         with open(path, "r") as f:
