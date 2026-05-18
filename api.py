@@ -7,8 +7,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import agent
 from agent import run
+from state import SimpleSessionDB
 
 app = FastAPI(title="OpenAI-Compatible Agent API")
+
+session_db = SimpleSessionDB()
 
 
 # --- OpenAI Request Schemas ---
@@ -88,16 +91,28 @@ async def list_models():
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(request: ChatCompletionRequest):
     try:
-        # OpenAI API is stateless, but our agent has a global history.
-        # We sync the global history with what's provided in the request.
-        # We set CHAT_HISTORY to all messages except the last one,
-        # because run() will append the prompt.
-        agent.CHAT_HISTORY = [
-            m.model_dump(exclude_none=True) for m in request.messages[:-1]
-        ]
+        session_id = request.user or "default"
+
+        # Load state from DB
+        db_messages = session_db.get_messages(session_id)
+        agent.CHAT_HISTORY = db_messages
+
+        # Handle empty messages array
+        if not request.messages:
+            raise HTTPException(
+                status_code=400, detail="Messages array cannot be empty"
+            )
+
+        # Sync with request messages (excluding last user message which will be added by run())
+        for msg in request.messages[:-1]:
+            session_db.append_message(session_id, msg.role, msg.content)
 
         user_prompt = request.messages[-1].content
         response_text = run(user_prompt)
+
+        # Save conversation to DB
+        session_db.append_message(session_id, "user", user_prompt)
+        session_db.append_message(session_id, "assistant", response_text)
 
         # Simple token estimation
         prompt_tokens = sum(len(m.content) for m in request.messages) // 4
@@ -118,6 +133,8 @@ async def chat_completions(request: ChatCompletionRequest):
                 total_tokens=prompt_tokens + completion_tokens,
             ),
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
