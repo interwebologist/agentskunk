@@ -22,6 +22,20 @@ These may or may not end up being features in the end product, at this point the
 #### Authentication & Authorization
 - **Ephemeral Secrets, indentity**
 
+## State Persistence
+
+The agent saves conversation history to SQLite at `~/.skunk/state.db` using the `user` field from `/v1/chat/completions` as the session ID.
+
+### Example Usage
+
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+     -H "Content-Type: application/json" \
+     -d '{"model":"test","messages":[{"role":"user","content":"Hello"}],"user":"my_session"}'
+```
+
+Subsequent requests with the same `user` field continue the conversation with full context.
+
 ## Development with Agent Sandbox
 
 ### Build Docker Image
