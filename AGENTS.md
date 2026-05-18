@@ -6,6 +6,7 @@
 - **Stay Focused:** Only touch files needed for the current prompt.
 - **Small Steps:** Make changes in small, logical chunks.
 - **YOU MUST TEST EVERYTHING:** test everything you make. see examples below 
+- **Never `git add *`** Only add files that you changed to the git commit / PR At one time
 
 **Examples:**
 - if you add dockerfile entrypoint github username and email you must test the github endpoint
