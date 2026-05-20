@@ -1,14 +1,9 @@
-import requests
 import os
 import json
 import uuid
-import re
 from typing import List, Any
 from dotenv import load_dotenv
 from openai import OpenAI
-from ddgs import DDGS
-from bs4 import BeautifulSoup
-from markdownify import markdownify as md
 from tools.registry import registry, discover_builtin_tools
 
 # Trigger auto-discovery of tools
@@ -34,132 +29,6 @@ def process_result(output: str, exit_code: int, limit: int = 1000) -> str:
         return f"{status}: {output[:limit]}... [FULL LOG SAVED TO {path}]"
 
     return f"{status}: {output}" if output else status
-
-
-def read_file(path: str) -> str:
-    """Read a file."""
-    try:
-        with open(path, "r") as f:
-            return f.read()
-    except Exception as e:
-        return f"[ERROR] {str(e)}"
-
-
-def weather(loc: str):
-    """Get weather for location."""
-    geo = requests.get(
-        f"https://geocoding-api.open-meteo.com/v1/search?name={loc}&count=1"
-    ).json()
-    if not geo.get("results"):
-        return f"{loc} not found."
-    res = geo["results"][0]
-    w = requests.get(
-        f"https://api.open-meteo.com/v1/forecast?latitude={res['latitude']}&longitude={res['longitude']}&current_weather=true&hourly=temperature_2m&forecast_hours=25&temperature_unit=fahrenheit&timezone=auto"
-    ).json()
-    now = w["current_weather"]["temperature"]
-    future = w["hourly"]["temperature_2m"][-1]
-    return f"{res['name']}: Now {now}F, 24h {future}F."
-
-
-def web_search(query: str, max_results: int = 3) -> str:
-    """Searches the web using DuckDuckGo and returns the top results."""
-    with DDGS() as ddgs:
-        results = [r for r in ddgs.text(query, max_results=max_results)]
-        if not results:
-            return "No results found."
-
-        formatted_results = []
-        for r in results:
-            formatted_results.append(
-                f"Title: {r['title']}\nSnippet: {r['body']}\nSource: {r['href']}"
-            )
-
-        return "\n\n".join(formatted_results)
-
-
-def google_search(q: str, num: int = 10) -> str:
-    """Official Serpbase.dev (Serper) Google Search tool."""
-    url = "https://google.serper.dev/search"
-    payload = json.dumps({"q": q, "num": num})
-    headers = {
-        "X-API-KEY": os.getenv("SERPBASE_API_KEY"),
-        "Content-Type": "application/json",
-    }
-    try:
-        response = requests.request("POST", url, headers=headers, data=payload)
-        response.raise_for_status()
-        data = response.json()
-        results = data.get("organic", [])
-        if not results:
-            return "No organic results found."
-        output = [
-            f"Title: {r.get('title')}\nLink: {r.get('link')}\nSnippet: {r.get('snippet')}"
-            for r in results
-        ]
-        return "\n\n".join(output)
-    except Exception as e:
-        return f"Serpbase Error: {str(e)}"
-
-
-def web_fetch(url: str) -> str:
-    """Fetches a URL, converts GitHub links to raw, cleans HTML, and returns Markdown."""
-    github_pattern = r"https?://(?:www\.)?github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.*)"
-
-    if "github.com" in url and "/blob/" in url:
-        match = re.match(github_pattern, url)
-        if match:
-            user, repo, branch, filepath = match.groups()
-            raw_url = (
-                f"https://raw.githubusercontent.com/{user}/{repo}/{branch}/{filepath}"
-            )
-            try:
-                response = requests.get(
-                    raw_url, headers={"User-Agent": "Claude-User"}, timeout=10
-                )
-                if response.status_code == 200:
-                    ext = filepath.split(".")[-1] if "." in filepath else ""
-                    return f"```{ext}\n{response.text}\n```"
-            except Exception:
-                pass
-
-    try:
-        response = requests.get(
-            url,
-            headers={
-                "User-Agent": "Claude-User",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-            timeout=10,
-        )
-        if response.status_code != 200:
-            return f"Error: {response.status_code}"
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        for el in soup(
-            ["script", "style", "nav", "footer", "header", "aside", "svg", "form"]
-        ):
-            el.decompose()
-
-        return md(str(soup), strip=["img", "button"], heading_style="atx").strip()
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-def clear_topic(new_topic: str = "") -> str:
-    """Clears the conversation history (except system prompt) and starts a new topic if provided."""
-    global CHAT_HISTORY
-    sys_prompt = None
-    if CHAT_HISTORY and CHAT_HISTORY[0].get("role") == "system":
-        sys_prompt = CHAT_HISTORY[0]
-
-    CHAT_HISTORY = []
-    if sys_prompt:
-        CHAT_HISTORY.append(sys_prompt)
-
-    if new_topic:
-        return f"Topic cleared. New topic: {new_topic}. Please start the conversation based on this."
-
-    return "Topic cleared. Conversation history has been reset. Waiting for next user input."
 
 
 # Global Configuration & State
