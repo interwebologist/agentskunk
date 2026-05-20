@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import agent
-from agent import run
+from agent import run, guardrails
 from state import SimpleSessionDB
 from tools.registry import registry, discover_builtin_tools
 
@@ -104,28 +104,38 @@ async def chat_completions(request: ChatCompletionRequest):
     try:
         session_id = request.user or "default"
 
-        # Load state from DB
+        if guardrails.is_kill_switch_triggered():
+            kill_result = guardrails.trigger_kill_switch()
+            raise HTTPException(
+                status_code=503,
+                detail=f"Service unavailable: Kill switch activated. {kill_result}",
+            )
+
         db_messages = session_db.get_messages(session_id)
         agent.CHAT_HISTORY = db_messages
 
-        # Handle empty messages array
         if not request.messages:
             raise HTTPException(
                 status_code=400, detail="Messages array cannot be empty"
             )
 
-        # Sync with request messages (excluding last user message which will be added by run())
         for msg in request.messages[:-1]:
             session_db.append_message(session_id, msg.role, msg.content)
 
         user_prompt = request.messages[-1].content
+
+        is_blocked, block_msg, block_type = guardrails.validate_input(user_prompt)
+        if is_blocked:
+            guardrails.trigger_kill_switch()
+            raise HTTPException(
+                status_code=403, detail=f"Input blocked [{block_type}]: {block_msg}"
+            )
+
         response_text = run(user_prompt)
 
-        # Save conversation to DB
         session_db.append_message(session_id, "user", user_prompt)
         session_db.append_message(session_id, "assistant", response_text)
 
-        # Simple token estimation
         prompt_tokens = sum(len(m.content) for m in request.messages) // 4
         completion_tokens = len(response_text) // 4
 

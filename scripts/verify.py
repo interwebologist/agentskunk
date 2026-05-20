@@ -70,23 +70,23 @@ def main():
     # 1. Ruff: Linting & Formatting (2026 Standard)
     # Using --output-format json as per v0.15+ docs
     checks = [
-        run_check("Linter (Ruff)", "ruff check --output-format json ."),
-        run_check("Formatter (Ruff)", "ruff format --check ."),
+        run_check("Linter (Ruff)", "uv run ruff check --output-format json ."),
+        run_check("Formatter (Ruff)", "uv run ruff format --check ."),
         check_json_files(),  # Add JSON syntax check
     ]
 
     # 2. Mypy: Type Checking (v1.20)
-    checks.append(run_check("Types (Mypy)", "mypy --no-error-summary ."))
+    checks.append(run_check("Types (Mypy)", "uv run mypy --no-error-summary ."))
 
     # 3. Bandit: Security
-    checks.append(run_check("Security (Bandit)", "bandit -r . -f json -q"))
+    checks.append(run_check("Security (Bandit)", "uv run bandit -r . -f json -q"))
 
     # 4. Pytest: Execution
     # Requires pytest-json-report installed
     checks.append(
         run_check(
             "Tests (Pytest)",
-            "pytest --json-report --json-report-file=.report.json --quiet",
+            "uv run pytest --json-report --json-report-file=.report.json --quiet",
         )
     )
 

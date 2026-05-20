@@ -10,5 +10,5 @@ opencode*.json
 __pycache__/
 .report.json
 .opencode/ 
-output/
+outputs/
 logs/
