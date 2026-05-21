@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/skunkagent.png" alt="Skunk Agent Logo" width="200"/>
+</p>
+
 # Skunk Agent - "Agent with Defenses"
 
 ## Project Focus (WIP)
