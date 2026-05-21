@@ -9,10 +9,16 @@
 - **Policy** - Human-in-the-loop approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
-- [X] **Secrets Vault** - Shuru MicroVM has secret proxy 
+- [X] **Secrets Vault** - Shuru MicroVM has secret proxy
+
 
 #### Normal Agent Stuff
 - add all agent stuff here. memory, web search, sub-agents (Think: research)
+
+- [ ] **Memory** - Local , possible FTS5
+- [ ] Sub-agents
+- [X] Web Search (SerpBase) that allows deep search engining Dorking
+- [X] Tools 
 
 ## Guardrails Overview
 
