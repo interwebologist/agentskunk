@@ -8,6 +8,10 @@ from pydantic import BaseModel, Field
 import agent
 from agent import run, guardrails, TOOL_REGISTRY
 from state import SimpleSessionDB
+from tools.registry import registry, discover_builtin_tools
+
+# Trigger auto-discovery of tools
+discover_builtin_tools()
 
 app = FastAPI(title="OpenAI-Compatible Agent API")
 
@@ -178,6 +182,11 @@ def check_tool_approvals(
         pass
 
     return None
+@app.get("/v1/tools", response_model=List[dict])
+async def list_tools():
+    """List all available tools in OpenAI format."""
+    tool_names = set(registry.get_all_tool_names())
+    return registry.get_definitions(tool_names=tool_names)
 
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
