@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests for React agent tools."""
+
 import sys
 import unittest
 import os
@@ -42,12 +43,14 @@ class TestTools(unittest.TestCase):
         """Test get_weather tool with mocked response."""
         mock_geo = MagicMock()
         mock_geo.json.return_value = {
-            "results": [{"name": "New York", "latitude": 40.7128, "longitude": -74.0060}]
+            "results": [
+                {"name": "New York", "latitude": 40.7128, "longitude": -74.0060}
+            ]
         }
         mock_weather = MagicMock()
         mock_weather.json.return_value = {
             "current_weather": {"temperature": 72.5},
-            "hourly": {"temperature_2m": [70, 71, 72, 73, 74]}
+            "hourly": {"temperature_2m": [70, 71, 72, 73, 74]},
         }
         mock_get.side_effect = [mock_geo, mock_weather]
 
@@ -71,7 +74,11 @@ class TestTools(unittest.TestCase):
     def test_web_search_success(self, mock_ddgs):
         """Test web_search tool with mocked DDGS."""
         mock_ddgs.return_value.__enter__.return_value.text.return_value = [
-            {"title": "Test Result", "body": "Test snippet", "href": "https://example.com"}
+            {
+                "title": "Test Result",
+                "body": "Test snippet",
+                "href": "https://example.com",
+            }
         ]
 
         result = registry.dispatch("web_search", {"query": "test query"})
@@ -94,7 +101,11 @@ class TestTools(unittest.TestCase):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "organic": [
-                {"title": "Google Result", "link": "https://google.com", "snippet": "Test snippet"}
+                {
+                    "title": "Google Result",
+                    "link": "https://google.com",
+                    "snippet": "Test snippet",
+                }
             ]
         }
         mock_response.raise_for_status.return_value = None
@@ -137,18 +148,20 @@ class TestTools(unittest.TestCase):
         mock_raw.text = "# Test Repo\n\nSome code"
         mock_get.return_value = mock_raw
 
-        result = registry.dispatch("web_fetch", {
-            "url": "https://github.com/testuser/testrepo/blob/main/README.md"
-        })
+        result = registry.dispatch(
+            "web_fetch",
+            {"url": "https://github.com/testuser/testrepo/blob/main/README.md"},
+        )
         data = json.loads(result)
         self.assertIn("content", data)
 
     def test_clear_topic(self):
         """Test clear_topic tool."""
         import agent
+
         agent.CHAT_HISTORY = [
             {"role": "system", "content": "You are a helpful assistant"},
-            {"role": "user", "content": "Hello"}
+            {"role": "user", "content": "Hello"},
         ]
 
         result = registry.dispatch("clear_topic", {})
@@ -160,9 +173,10 @@ class TestTools(unittest.TestCase):
     def test_clear_topic_with_new_topic(self):
         """Test clear_topic tool with new topic."""
         import agent
+
         agent.CHAT_HISTORY = [
             {"role": "system", "content": "You are a helpful assistant"},
-            {"role": "user", "content": "Hello"}
+            {"role": "user", "content": "Hello"},
         ]
 
         result = registry.dispatch("clear_topic", {"new_topic": "Programming"})
@@ -177,7 +191,15 @@ class TestToolRegistry(unittest.TestCase):
     def test_get_all_tool_names(self):
         """Test that all expected tools are registered."""
         tool_names = registry.get_all_tool_names()
-        expected = ["read_file", "run_bash", "get_weather", "web_search", "google_search", "web_fetch", "clear_topic"]
+        expected = [
+            "read_file",
+            "run_bash",
+            "get_weather",
+            "web_search",
+            "google_search",
+            "web_fetch",
+            "clear_topic",
+        ]
         for tool in expected:
             self.assertIn(tool, tool_names, f"Tool {tool} not registered")
 
