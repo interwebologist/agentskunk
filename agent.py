@@ -1,15 +1,13 @@
-import requests
 import os
 import json
-import subprocess
 import uuid
-import re
 from typing import List, Any
 from dotenv import load_dotenv
 from openai import OpenAI
-from ddgs import DDGS
-from bs4 import BeautifulSoup
-from markdownify import markdownify as md
+from tools.registry import registry, discover_builtin_tools
+
+# Trigger auto-discovery of tools
+discover_builtin_tools()
 
 from guardrails import create_guardrails, Guardrails
 
@@ -51,6 +49,7 @@ def read_file(path: str) -> str:
     except Exception as e:
         return f"[ERROR] {str(e)}"
 
+    return f"{status}: {output}" if output else status
 
 def weather(loc: str):
     """Get weather for location."""
