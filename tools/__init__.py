@@ -7,4 +7,9 @@ def check_file_requirements():
     return True
 
 
-__all__ = ["check_file_requirements"]
+def check_bash_requirements():
+    """Bash tools only require terminal backend availability."""
+    return True
+
+
+__all__ = ["check_file_requirements", "check_bash_requirements"]
