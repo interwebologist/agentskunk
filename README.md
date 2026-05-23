@@ -21,14 +21,17 @@ A hackable, lightweight local agent hardened for production
 
 #### Agent AI Stuff
 
-- [ ] **Memory** - Local , possible FTS5. Holographic?
-- [ ] **Sub-agents**
+- [ ] **Memory** - Local , possible FTS5. Holographic? May do RRF. Research needed here.
+- [ ] **Sub-agents** - We want endless types of 'workflows' for orchestration 
 - [X] **Web Search:** (SerpBase) that allows deep search engine Dorking and pay as you go, keep forever searches
 - [X] **Tools**
 - [X] **CLI**
 - [X] **API**
 - [ ] **Voice STT**
 - [ ] **Archtechual Patterns for Small languge models**
+- [ ] **Compression** - head / tail with summerize the middle. tool calls clean up when not needed. 4 part algorithm. patachute for LLM gateway protection as 2nd safety
+- [ ] **Reduced Attack Vector**
+- [ ] **Human in the loop**
 
 ## Guardrails Overview
 
