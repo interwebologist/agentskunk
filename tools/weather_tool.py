@@ -5,7 +5,7 @@ import requests
 from tools.registry import registry
 
 
-def weather(loc: str) -> str:
+def get_weather(loc: str) -> str:
     """Get weather for location."""
     try:
         geo = requests.get(
@@ -33,7 +33,7 @@ def weather(loc: str) -> str:
 
 
 WEATHER_SCHEMA = {
-    "name": "weather",
+    "name": "get_weather",
     "description": "Get weather for a location. Returns current temperature and 24-hour forecast.",
     "parameters": {
         "type": "object",
@@ -43,10 +43,10 @@ WEATHER_SCHEMA = {
 }
 
 registry.register(
-    name="weather",
+    name="get_weather",
     toolset="weather",
     schema=WEATHER_SCHEMA,
-    handler=lambda args, **kw: weather(loc=args.get("loc", "")),
+    handler=lambda args, **kw: get_weather(loc=args.get("loc", "")),
     check_fn=None,
     emoji="☀️",
 )
