@@ -11,7 +11,7 @@ A hackable, lightweight local agent hardened for production
 #### Security
 
 - [X] **Guardrails** - Input/output scanning to prevent prompt injection, data exfiltration, and malicious behavior using llm-guard NLP models
-- **Policy** - Human-in-the-loop approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
+- [X] **Human-in-the-loop** approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
 - [X] **Secrets Vault** - Shuru MicroVM has secret proxy
@@ -30,8 +30,8 @@ A hackable, lightweight local agent hardened for production
 - [ ] **Voice STT**
 - [ ] **Archtechual Patterns for Small languge models**
 - [ ] **Compression** - head / tail with summerize the middle. tool calls clean up when not needed. 4 part algorithm. patachute for LLM gateway protection as 2nd safety
-- [ ] **Reduced Attack Vector**
-- [ ] **Human in the loop**
+- [ ] **Reduced Attack Vector** on popular offering
+- [ ] **NerdPrompt** - allow to be used with NerdPrompt in terminal
 
 ## Guardrails Overview
 
