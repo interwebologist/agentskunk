@@ -26,6 +26,7 @@
 - [X] **CLI**
 - [X] **API**
 - [ ] **Voice STT**
+- [ ] **Archtechual Patterns for Small languge models**
 
 ## Guardrails Overview
 
