@@ -2,7 +2,9 @@
   <img src="images/nerdface.png" alt="Nerdface Logo" width="600"/>
 </p>
 
-# Nerdface - "Agent with Defenses"
+# Nerdface 
+
+A hackable, lightweight local agent hardened for production
 
 ## Project Focus for MVP (Work In Progress)
 
