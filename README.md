@@ -10,13 +10,8 @@ A hackable, lightweight local agent hardened for production
 
 #### Security
 
-<<<<<<< HEAD
 - [X] **Guardrails** - Input scanning to prevent prompt injection using llm-guard NLP models
 - **Policy** - Human-in-the-loop approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
-=======
-- [X] **Guardrails** - Input/output scanning to prevent prompt injection, data exfiltration, and malicious behavior using llm-guard NLP models
-- [X] **Human-in-the-loop** approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
->>>>>>> 0d3fa78a0649d38cf6ef5547fcfbd0a5033684a1
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
 - [X] **Secrets Vault** - Shuru MicroVM has secret proxy
@@ -48,18 +43,9 @@ The Nerdface uses **llm-guard** to scan all inputs for security threats before t
 |--------|-----------------|--------|
 | **Prompt Injection** | NLP model analyzes text for attempts to override system instructions | Blocks input, triggers kill-switch |
 | **Sandbox Escape Attempts** | Regex patterns for `/etc/passwd`, Docker/K8s commands | Blocks output containing system paths |
-| **Runaway Loops** | Max iterations limit in ReAct loop | Stops agent after limits exceeded |
-
-### How Guardrails Work
-
-```
-User Query → Guardrails (Local NLP) → Agent → Guardrails → User
-              ↓ Local Inference ↓              ↓ Local Inference ↓
-         (Models on agent machine)       (Models on agent machine)
-```
+| **Runaway Loops** | Max iterations limit 
 
 - **Models run locally** on the agent machine (NOT on the LLM server)
-- **No network dependency** to LLM server for security scanning
 - **Low latency** - models load once, inference takes milliseconds
 
 ### NLP Models Used
@@ -68,24 +54,6 @@ User Query → Guardrails (Local NLP) → Agent → Guardrails → User
 |-------|------|---------|-------------------|
 | PromptInjection | 714MB | Detects prompt injection attempts | `protectai/deberta-v3-base-prompt-injection-v2` |
 | **Total** | **~714MB** | | |
-
-### How Models Run
-
-1. **Download**: First time you run guardrails, models download to `~/.cache/huggingface/hub/`
-2. **Load**: Models load into memory using PyTorch + Transformers (happens once on agent startup)
-3. **Inference**: Each scanner runs locally on the agent machine
-4. **No LLM dependency**: Models don't need access to your LLM server
-
-### Setup
-
-The models are automatically downloaded on first use. To pre-download them:
-
-```bash
-cd /Users/ryan/AI/nerdface
-uv run python -c "from guardrails import Guardrails; g = Guardrails()"
-```
-
-Models will be cached in `~/.cache/huggingface/hub/` for future runs.
 
 ## Feature Updates
 
