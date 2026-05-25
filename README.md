@@ -27,8 +27,7 @@ A hackable, lightweight local agent hardened for production
 - [X] **Tools**
 - [X] **CLI**
 - [X] **API**
-- [ ] **Voice STT**
-- [ ] **Archtechual Patterns for Small languge models**
+- [ ] **System Design Patterns for Small languge models**
 - [ ] **Compression** - head / tail with summerize the middle. tool calls clean up when not needed. 4 part algorithm. patachute for LLM gateway protection as 2nd safety
 - [ ] **Reduced Attack Vector** on popular offering
 - [ ] **NerdPrompt** - allow to be used with NerdPrompt in terminal
