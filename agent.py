@@ -35,7 +35,7 @@ def load_system_prompt() -> str:
     return ""
 
 
-def run(prompt: str, max_iterations: int = 90) -> str:
+def run(prompt: str, max_iterations: int = 300) -> str:
     global CHAT_HISTORY
 
     if guardrails.is_kill_switch_triggered():
@@ -60,11 +60,6 @@ def run(prompt: str, max_iterations: int = 90) -> str:
             kill_result = guardrails.trigger_kill_switch()
             return f"ERROR: Kill switch activated during execution. {kill_result}"
 
-        is_step_exceeded, step_msg = guardrails.check_step_limit()
-        if is_step_exceeded:
-            guardrails.trigger_kill_switch()
-            return f"ERROR: {step_msg}"
-
         iterations += 1
         tools = registry.get_definitions(set(registry.get_all_tool_names()), quiet=True)
         res = client.chat.completions.create(
@@ -75,12 +70,6 @@ def run(prompt: str, max_iterations: int = 90) -> str:
         CHAT_HISTORY.append(msg.model_dump(exclude_none=True))
 
         if not msg.tool_calls:
-            is_blocked, block_msg, block_type = guardrails.validate_output(
-                str(msg.content)
-            )
-            if is_blocked:
-                guardrails.trigger_kill_switch()
-                return f"ERROR: Output blocked [{block_type}]: {block_msg}"
             return str(msg.content)
 
         for call in msg.tool_calls:
@@ -89,12 +78,6 @@ def run(prompt: str, max_iterations: int = 90) -> str:
                 try:
                     args = json.loads(call.function.arguments)
                     out = registry.dispatch(func_name, args)
-                    is_blocked, block_msg, block_type = guardrails.validate_output(
-                        out, f"Action: {func_name}"
-                    )
-                    if is_blocked:
-                        guardrails.trigger_kill_switch()
-                        return f"ERROR: Tool output blocked [{block_type}]: {block_msg}"
                     CHAT_HISTORY.append(
                         {
                             "role": "tool",

@@ -10,7 +10,7 @@ A hackable, lightweight local agent hardened for production
 
 #### Security
 
-- [X] **Guardrails** - Input/output scanning to prevent prompt injection, data exfiltration, and malicious behavior using llm-guard NLP models
+- [X] **Guardrails** - Input scanning to prevent prompt injection using llm-guard NLP models
 - **Policy** - Human-in-the-loop approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
@@ -32,19 +32,15 @@ A hackable, lightweight local agent hardened for production
 
 ## Guardrails Overview
 
-The Nerdface uses **llm-guard** to scan all inputs and outputs for security threats before they reach the the agent or before it leaves the agent and they are returned to the user.
+The Nerdface uses **llm-guard** to scan all inputs for security threats before they reach the agent.
 
 ### What Guardrails Protect Against
 
 | Threat | Detection Method | Action |
 |--------|-----------------|--------|
 | **Prompt Injection** | NLP model analyzes text for attempts to override system instructions | Blocks input, triggers kill-switch |
-| **Gibberish/LLM Jailbreaks** | Detects nonsensical or encoded payloads | Blocks suspicious inputs |
 | **Sandbox Escape Attempts** | Regex patterns for `/etc/passwd`, Docker/K8s commands | Blocks output containing system paths |
-| **Proxy Token Leaks** | Regex patterns for API keys, tokens, bearer tokens | Revokes credentials, triggers kill-switch |
-| **Malicious URLs** | NLP model classifies URLs as safe/malicious | Blocks output with malicious links |
-| **High-Entropy Data** | Shannon entropy calculation for encoded secrets | Detects base64/hex encoded payloads |
-| **Runaway Loops** | Step counter, token velocity monitoring | Stops agent after limits exceeded |
+| **Runaway Loops** | Max iterations limit in ReAct loop | Stops agent after limits exceeded |
 
 ### How Guardrails Work
 
@@ -63,9 +59,7 @@ User Query → Guardrails (Local NLP) → Agent → Guardrails → User
 | Model | Size | Purpose | Hugging Face Path |
 |-------|------|---------|-------------------|
 | PromptInjection | 714MB | Detects prompt injection attempts | `protectai/deberta-v3-base-prompt-injection-v2` |
-| Gibberish | 256MB | Detects nonsensical/gibberish text | `madhurjindal/autonlp-Gibberish-Detector-492513457` |
-| MaliciousURLs | 954MB | Detects malicious URLs | `DunnBC22/codebert-base-Malicious_URLs` |
-| **Total** | **~1.9GB** | | |
+| **Total** | **~714MB** | | |
 
 ### How Models Run
 
