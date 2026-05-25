@@ -10,8 +10,13 @@ A hackable, lightweight local agent hardened for production
 
 #### Security
 
+<<<<<<< HEAD
 - [X] **Guardrails** - Input scanning to prevent prompt injection using llm-guard NLP models
 - **Policy** - Human-in-the-loop approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
+=======
+- [X] **Guardrails** - Input/output scanning to prevent prompt injection, data exfiltration, and malicious behavior using llm-guard NLP models
+- [X] **Human-in-the-loop** approvals (out of band or Auth'd IDV. Would like out of band links and biometric scans ) for destructive actions, all policy outside the prompt.
+>>>>>>> 0d3fa78a0649d38cf6ef5547fcfbd0a5033684a1
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
 - [X] **Secrets Vault** - Shuru MicroVM has secret proxy
@@ -21,14 +26,17 @@ A hackable, lightweight local agent hardened for production
 
 #### Agent AI Stuff
 
-- [ ] **Memory** - Local , possible FTS5. Holographic?
-- [ ] **Sub-agents**
+- [ ] **Memory** - Local , possible FTS5. Holographic? May do RRF. Research needed here.
+- [ ] **Sub-agents** - We want endless types of 'workflows' for orchestration 
 - [X] **Web Search:** (SerpBase) that allows deep search engine Dorking and pay as you go, keep forever searches
 - [X] **Tools**
 - [X] **CLI**
 - [X] **API**
 - [ ] **Voice STT**
 - [ ] **Archtechual Patterns for Small languge models**
+- [ ] **Compression** - head / tail with summerize the middle. tool calls clean up when not needed. 4 part algorithm. patachute for LLM gateway protection as 2nd safety
+- [ ] **Reduced Attack Vector** on popular offering
+- [ ] **NerdPrompt** - allow to be used with NerdPrompt in terminal
 
 ## Guardrails Overview
 
