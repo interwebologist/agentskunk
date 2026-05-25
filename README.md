@@ -15,20 +15,20 @@ A hackable, lightweight local agent hardened for production
 - **logging** - immutable logs for auditing user+agent+tool action. connections for loki /tempo
 - [X] **Sandbox** - microVM (Shuru) or strong container isolation
 - [X] **Secrets Vault** - Shuru MicroVM has secret proxy
-- [ ] **Secured Messaging** - API , IDV Messaging service
-- [ ] **Biometic logins** 
+- [ ] **Secured Messaging** - API
+- [ ] **Biometic, MFA logins** - Identity
 
 
 #### Agent AI Stuff
 
-- [ ] **Memory** - Local , possible FTS5. Holographic? May do RRF. Research needed here.
+- [ ] **Memory** - Local , possible FTS5, HRR Holographic. FTS5 O(log N) with trust score RRF. 
 - [ ] **Sub-agents** - We want endless types of 'workflows' for orchestration 
 - [X] **Web Search:** (SerpBase) that allows deep search engine Dorking and pay as you go, keep forever searches
 - [X] **Tools**
 - [X] **CLI**
 - [X] **API**
 - [ ] **Voice STT**
-- [ ] **Archtechual Patterns for Small languge models**
+- [ ] **Small languge models Focus**
 - [ ] **Compression** - head / tail with summerize the middle. tool calls clean up when not needed. 4 part algorithm. patachute for LLM gateway protection as 2nd safety
 - [ ] **Reduced Attack Vector** on popular offering
 - [ ] **NerdPrompt** - allow to be used with NerdPrompt in terminal
