@@ -60,7 +60,7 @@ class Guardrails:
         ]
 
         self.invisible_scanner = InvisibleText()
-        self.gibberish_scanner = Gibberish()
+        self.gibberish_scanner = Gibberish(threshold=0.99)
         self.malicious_urls_scanner = MaliciousURLs()
 
         self.proxy_scanner = Regex(

@@ -6,10 +6,13 @@ CLI Interface for SkunkAgent
 import sys
 import argparse
 import cmd
+import logging
+import os
 from typing import Dict, List, Optional, Any
 
 from state import SimpleSessionDB
 import agent
+from agent.context_compressor import ContextCompressor
 
 
 class SimpleCLI(cmd.Cmd):
@@ -24,6 +27,22 @@ class SimpleCLI(cmd.Cmd):
         self.current_session_id: Optional[str] = None
         self.agent_history: List[Dict[str, Any]] = []
         self.auto_session = auto_session
+        self.compressor: Optional[ContextCompressor] = None
+        self._init_compressor()
+
+    def _init_compressor(self):
+        """Initialize context compressor if needed."""
+        try:
+            self.compressor = ContextCompressor(
+                model=os.getenv("MODEL_NAME", "test-model"),
+                threshold_percent=0.50,
+                quiet_mode=False,
+                config_context_length=int(os.getenv("MODEL_CONTEXT_LENGTH", "128000")),
+            )
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to initialize compressor: {e}")
+            self.compressor = None
 
     def onecmd(self, line: str):
         """Override to handle / prefix for commands"""
@@ -134,6 +153,14 @@ class SimpleCLI(cmd.Cmd):
 
         self.agent_history.append({"role": "assistant", "content": response})
         self.session_db.append_message(self.current_session_id, "assistant", response)
+
+        if self.compressor:
+            from agent.model_metadata import estimate_messages_tokens_rough
+
+            tokens = estimate_messages_tokens_rough(self.agent_history)
+            if self.compressor.should_compress(tokens):
+                compressed = self.compressor.compress(self.agent_history, tokens)
+                self.agent_history = compressed
 
         print(response)
 
