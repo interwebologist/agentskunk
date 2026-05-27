@@ -60,12 +60,19 @@ def discover_builtin_tools(tools_dir: Optional[Path] = None) -> List[str]:
     tools_path = (
         Path(tools_dir) if tools_dir is not None else Path(__file__).resolve().parent
     )
-    module_names = [
-        f"tools.{path.stem}"
-        for path in sorted(tools_path.glob("*.py"))
-        if path.name not in {"__init__.py", "registry.py"}
-        and _module_registers_tools(path)
-    ]
+    module_names = []
+    for path in sorted(tools_path.rglob("*.py")):
+        if path.name in {"__init__.py", "registry.py"}:
+            continue
+        rel_path = path.relative_to(tools_path)
+        parts = list(rel_path.parts)
+        if len(parts) > 1:
+            parts[-1] = parts[-1].replace(".py", "")
+            mod_name = f"tools.{'.'.join(parts)}"
+        else:
+            mod_name = f"tools.{path.stem}"
+        if _module_registers_tools(path):
+            module_names.append(mod_name)
 
     imported: List[str] = []
     for mod_name in module_names:

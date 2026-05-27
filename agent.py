@@ -7,8 +7,9 @@ from tools.registry import registry, discover_builtin_tools
 
 from guardrails import create_guardrails, Guardrails
 
-discover_builtin_tools()
+from tools.memory.store import MemoryStore
 
+discover_builtin_tools()
 load_dotenv()
 
 guardrails: Guardrails = create_guardrails()
@@ -112,6 +113,18 @@ def run(prompt: str, max_iterations: int = 90) -> str:
                     )
 
     return "Error: Maximum iterations reached without final response."
+
+
+def on_session_end() -> None:
+    """Auto-extract facts from conversation at session end."""
+    global CHAT_HISTORY
+    try:
+        store = MemoryStore(db_path="~/.skunk/state.db")
+        extracted = store.auto_extract_facts(CHAT_HISTORY)
+        if extracted > 0:
+            print(f"Auto-extracted {extracted} facts from session")
+    except Exception as e:
+        print(f"Auto-extraction failed: {e}")
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@
 - Python 3.13
 - AI LLM the agent.py will use : 192.168.1.33:8080/v1
 - Tools are in agent.py for now. May move.
-- Stack: FastAPI + LangGraph + Using OpenAI style llama-server backend
+- Stack: FastAPI + Pure Python + Using OpenAI style llama-server backend
 
 ## Notes
 - To fix deps: uv sync

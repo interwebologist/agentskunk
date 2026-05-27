@@ -185,6 +185,121 @@ class TestTools(unittest.TestCase):
         self.assertEqual(data["new_topic"], "Programming")
 
 
+class TestMemoryTools(unittest.TestCase):
+    """Test holographic memory tools."""
+
+    def test_fact_store_add(self):
+        """Test fact_store add action."""
+        result = registry.dispatch(
+            "fact_store",
+            {
+                "action": "add",
+                "content": "Test fact for unit test",
+                "category": "general",
+            },
+        )
+        data = json.loads(result)
+        self.assertIn("fact_id", data)
+        self.assertEqual(data["status"], "added")
+
+    def test_fact_store_search(self):
+        """Test fact_store search action."""
+        registry.dispatch(
+            "fact_store",
+            {
+                "action": "add",
+                "content": "Unit test fact",
+                "category": "general",
+            },
+        )
+        result = registry.dispatch(
+            "fact_store",
+            {
+                "action": "search",
+                "query": "unit test",
+                "min_trust": 0.0,
+            },
+        )
+        data = json.loads(result)
+        self.assertIn("results", data)
+        self.assertIn("count", data)
+        self.assertGreater(data["count"], 0)
+
+    def test_fact_store_probe(self):
+        """Test fact_store probe action."""
+        registry.dispatch(
+            "fact_store",
+            {
+                "action": "add",
+                "content": "User likes coffee",
+                "category": "user_pref",
+                "tags": "test",
+            },
+        )
+        result = registry.dispatch(
+            "fact_store",
+            {
+                "action": "probe",
+                "entity": "user",
+                "category": "user_pref",
+            },
+        )
+        data = json.loads(result)
+        self.assertIn("results", data)
+        self.assertIn("count", data)
+
+    def test_fact_store_list(self):
+        """Test fact_store list action."""
+        result = registry.dispatch(
+            "fact_store",
+            {
+                "action": "list",
+                "category": "general",
+            },
+        )
+        data = json.loads(result)
+        self.assertIn("facts", data)
+        self.assertIn("count", data)
+
+    def test_fact_store_unknown_action(self):
+        """Test fact_store with unknown action."""
+        result = registry.dispatch(
+            "fact_store",
+            {"action": "unknown_action"},
+        )
+        data = json.loads(result)
+        self.assertIn("error", data)
+
+    def test_fact_feedback(self):
+        """Test fact_feedback tool."""
+        registry.dispatch(
+            "fact_store",
+            {
+                "action": "add",
+                "content": "Fact for feedback test",
+                "category": "general",
+            },
+        )
+        result = registry.dispatch(
+            "fact_store",
+            {
+                "action": "search",
+                "query": "feedback test",
+                "min_trust": 0.0,
+            },
+        )
+        data = json.loads(result)
+        if data["count"] > 0:
+            fact_id = data["results"][0]["fact_id"]
+            feedback_result = registry.dispatch(
+                "fact_feedback",
+                {"action": "helpful", "fact_id": fact_id},
+            )
+            feedback_data = json.loads(feedback_result)
+            self.assertIn("fact_id", feedback_data)
+            self.assertIn("new_trust", feedback_data)
+
+
 class TestToolRegistry(unittest.TestCase):
     """Test the tool registry."""
 
@@ -199,6 +314,8 @@ class TestToolRegistry(unittest.TestCase):
             "google_search",
             "web_fetch",
             "clear_topic",
+            "fact_store",
+            "fact_feedback",
         ]
         for tool in expected:
             self.assertIn(tool, tool_names, f"Tool {tool} not registered")
