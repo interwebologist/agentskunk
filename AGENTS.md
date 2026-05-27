@@ -4,6 +4,7 @@
 - **No Hallucinations**: Do not build from memory. Search the offical docs online with Webfetch tool and implement based off real up to date web data
 - **Exit Condition**: If `scripts/verify.py` fails 5 times on the same error you must search the error using Webfetch or riase a "BLOCKED" message 
 - **Stay Focused:** Only touch files needed for the current prompt.
+- **Clean Code:** Never leave unused code. If you remove functionality, always clean up the unused code. Keep the codebase clean.
 - **Small Steps:** Make changes in small, logical chunks.
 - **YOU MUST TEST EVERYTHING:** test everything you make. see examples below 
 - **Never `git add *`** Only add files that you changed to the git commit / PR At one time
