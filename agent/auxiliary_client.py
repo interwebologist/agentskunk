@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Any
 
 from openai import OpenAI
 
@@ -15,7 +14,7 @@ client = OpenAI(
 
 
 def call_llm(
-    messages: list[dict[str, Any]],
+    messages: list[dict[str, object]],
     model: str | None = None,
     max_tokens: int | None = None,
 ) -> str:
@@ -42,10 +41,3 @@ def call_llm(
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
         raise
-
-
-def is_connection_error(error: Exception) -> bool:
-    """Check if error is a connection-related error."""
-    import socket
-
-    return isinstance(error, (socket.error, ConnectionError, TimeoutError))
