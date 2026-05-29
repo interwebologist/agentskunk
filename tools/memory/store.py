@@ -7,6 +7,7 @@ import re
 import sqlite3
 import threading
 from pathlib import Path
+from contextlib import contextmanager
 
 try:
     from . import holographic as hrr
@@ -110,14 +111,23 @@ class MemoryStore:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.default_trust = _clamp_trust(default_trust)
         self.hrr_dim = hrr_dim
-        self._conn: sqlite3.Connection = sqlite3.connect(
-            str(self.db_path),
-            check_same_thread=False,
-            timeout=10.0,
-        )
+        self._conn: sqlite3.Connection | None = None
         self._lock = threading.RLock()
+        self._connect()
         self._conn.row_factory = sqlite3.Row
         self._init_db()
+
+    # ------------------------------------------------------------------
+    # Initialisation
+    # ------------------------------------------------------------------
+
+    def _connect(self) -> None:
+        if self._conn is None:
+            self._conn = sqlite3.connect(
+                str(self.db_path),
+                check_same_thread=False,
+                timeout=10.0,
+            )
 
     # ------------------------------------------------------------------
     # Initialisation
@@ -138,6 +148,18 @@ class MemoryStore:
     # Public API
     # ------------------------------------------------------------------
 
+    @contextmanager
+    def _db_cursor(self):
+        if self._conn is None:
+            self._connect()
+        with self._lock:
+            cursor = self._conn.cursor()
+            try:
+                yield cursor
+            finally:
+                cursor.close()
+            self._conn.commit()
+
     def add_fact(
         self,
         content: str,
@@ -156,21 +178,22 @@ class MemoryStore:
                 raise ValueError("content must not be empty")
 
             try:
-                cur = self._conn.execute(
-                    """
-                    INSERT INTO facts (content, category, tags, trust_score)
-                    VALUES (?, ?, ?, ?)
-                    """,
-                    (content, category, tags, self.default_trust),
-                )
-                self._conn.commit()
-                fact_id: int = cur.lastrowid  # type: ignore[assignment]
+                with self._db_cursor() as cursor:
+                    cur = cursor.execute(
+                        """
+                        INSERT INTO facts (content, category, tags, trust_score)
+                        VALUES (?, ?, ?, ?)
+                        """,
+                        (content, category, tags, self.default_trust),
+                    )
+                    fact_id: int = cur.lastrowid  # type: ignore[assignment]
             except sqlite3.IntegrityError:
                 # Duplicate content — return existing id
-                row = self._conn.execute(
-                    "SELECT fact_id FROM facts WHERE content = ?", (content,)
-                ).fetchone()
-                return int(row["fact_id"])
+                with self._db_cursor() as cursor:
+                    row = cursor.execute(
+                        "SELECT fact_id FROM facts WHERE content = ?", (content,)
+                    ).fetchone()
+                    return int(row["fact_id"])
 
             # Entity extraction and linking
             for name in self._extract_entities(content):
@@ -220,17 +243,18 @@ class MemoryStore:
                 LIMIT ?
             """
 
-            rows = self._conn.execute(sql, params).fetchall()
-            results = [self._row_to_dict(r) for r in rows]
+            with self._db_cursor() as cursor:
+                rows = cursor.execute(sql, params).fetchall()
+                results = [self._row_to_dict(r) for r in rows]
 
             if results:
                 ids = [r["fact_id"] for r in results]
                 placeholders = ",".join("?" * len(ids))
-                self._conn.execute(
-                    f"UPDATE facts SET retrieval_count = retrieval_count + 1 WHERE fact_id IN ({placeholders})",
-                    ids,
-                )
-                self._conn.commit()
+                with self._db_cursor() as cursor:
+                    cursor.execute(
+                        f"UPDATE facts SET retrieval_count = retrieval_count + 1 WHERE fact_id IN ({placeholders})",
+                        ids,
+                    )
 
             return results
 
@@ -247,45 +271,45 @@ class MemoryStore:
         Returns True if the row existed, False otherwise.
         """
         with self._lock:
-            row = self._conn.execute(
-                "SELECT fact_id, trust_score FROM facts WHERE fact_id = ?", (fact_id,)
-            ).fetchone()
-            if row is None:
-                return False
+            with self._db_cursor() as cursor:
+                row = cursor.execute(
+                    "SELECT fact_id, trust_score FROM facts WHERE fact_id = ?", (fact_id,)
+                ).fetchone()
+                if row is None:
+                    return False
 
-            assignments: list[str] = ["updated_at = CURRENT_TIMESTAMP"]
-            params: list = []
+                assignments: list[str] = ["updated_at = CURRENT_TIMESTAMP"]
+                params: list = []
 
-            if content is not None:
-                assignments.append("content = ?")
-                params.append(content.strip())
-            if tags is not None:
-                assignments.append("tags = ?")
-                params.append(tags)
-            if category is not None:
-                assignments.append("category = ?")
-                params.append(category)
-            if trust_delta is not None:
-                new_trust = _clamp_trust(row["trust_score"] + trust_delta)
-                assignments.append("trust_score = ?")
-                params.append(new_trust)
+                if content is not None:
+                    assignments.append("content = ?")
+                    params.append(content.strip())
+                if tags is not None:
+                    assignments.append("tags = ?")
+                    params.append(tags)
+                if category is not None:
+                    assignments.append("category = ?")
+                    params.append(category)
+                if trust_delta is not None:
+                    new_trust = _clamp_trust(row["trust_score"] + trust_delta)
+                    assignments.append("trust_score = ?")
+                    params.append(new_trust)
 
-            params.append(fact_id)
-            self._conn.execute(
-                f"UPDATE facts SET {', '.join(assignments)} WHERE fact_id = ?",
-                params,
-            )
-            self._conn.commit()
+                params.append(fact_id)
+                cursor.execute(
+                    f"UPDATE facts SET {', '.join(assignments)} WHERE fact_id = ?",
+                    params,
+                )
 
             # If content changed, re-extract entities
             if content is not None:
-                self._conn.execute(
-                    "DELETE FROM fact_entities WHERE fact_id = ?", (fact_id,)
-                )
-                for name in self._extract_entities(content):
-                    entity_id = self._resolve_entity(name)
-                    self._link_fact_entity(fact_id, entity_id)
-                self._conn.commit()
+                with self._db_cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM fact_entities WHERE fact_id = ?", (fact_id,)
+                    )
+                    for name in self._extract_entities(content):
+                        entity_id = self._resolve_entity(name)
+                        self._link_fact_entity(fact_id, entity_id)
 
             # Recompute HRR vector if content changed
             if content is not None:
@@ -304,17 +328,17 @@ class MemoryStore:
     def remove_fact(self, fact_id: int) -> bool:
         """Delete a fact and its entity links. Returns True if the row existed."""
         with self._lock:
-            row = self._conn.execute(
-                "SELECT fact_id, category FROM facts WHERE fact_id = ?", (fact_id,)
-            ).fetchone()
-            if row is None:
-                return False
+            with self._db_cursor() as cursor:
+                row = cursor.execute(
+                    "SELECT fact_id, category FROM facts WHERE fact_id = ?", (fact_id,)
+                ).fetchone()
+                if row is None:
+                    return False
 
-            self._conn.execute(
-                "DELETE FROM fact_entities WHERE fact_id = ?", (fact_id,)
-            )
-            self._conn.execute("DELETE FROM facts WHERE fact_id = ?", (fact_id,))
-            self._conn.commit()
+                cursor.execute(
+                    "DELETE FROM fact_entities WHERE fact_id = ?", (fact_id,)
+                )
+                cursor.execute("DELETE FROM facts WHERE fact_id = ?", (fact_id,))
             self._rebuild_bank(row["category"])
             return True
 
@@ -345,8 +369,9 @@ class MemoryStore:
                 ORDER BY trust_score DESC
                 LIMIT ?
             """
-            rows = self._conn.execute(sql, params).fetchall()
-            return [self._row_to_dict(r) for r in rows]
+            with self._db_cursor() as cursor:
+                rows = cursor.execute(sql, params).fetchall()
+                return [self._row_to_dict(r) for r in rows]
 
     def record_feedback(self, fact_id: int, helpful: bool) -> dict:
         """Record user feedback and adjust trust asymmetrically.
@@ -370,17 +395,17 @@ class MemoryStore:
             new_trust = _clamp_trust(old_trust + delta)
 
             helpful_increment = 1 if helpful else 0
-            self._conn.execute(
-                """
-                UPDATE facts
-                SET trust_score    = ?,
-                    helpful_count  = helpful_count + ?,
-                    updated_at     = CURRENT_TIMESTAMP
-                WHERE fact_id = ?
-                """,
-                (new_trust, helpful_increment, fact_id),
-            )
-            self._conn.commit()
+            with self._db_cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE facts
+                    SET trust_score    = ?,
+                        helpful_count  = helpful_count + ?,
+                        updated_at     = CURRENT_TIMESTAMP
+                    WHERE fact_id = ?
+                    """,
+                    (new_trust, helpful_increment, fact_id),
+                )
 
             return {
                 "fact_id": fact_id,
@@ -441,31 +466,32 @@ class MemoryStore:
             return int(row["entity_id"])
 
         # Search aliases — aliases stored as comma-separated; use LIKE with % boundaries
-        alias_row = self._conn.execute(
-            """
-            SELECT entity_id FROM entities
-            WHERE ',' || aliases || ',' LIKE '%,' || ? || ',%'
-            """,
-            (name,),
-        ).fetchone()
-        if alias_row is not None:
-            return int(alias_row["entity_id"])
+        with self._db_cursor() as cursor:
+            alias_row = cursor.execute(
+                """
+                SELECT entity_id FROM entities
+                WHERE ',' || aliases || ',' LIKE '%,' || ? || ',%'
+                """,
+                (name,),
+            ).fetchone()
+            if alias_row is not None:
+                return int(alias_row["entity_id"])
 
         # Create new entity
-        cur = self._conn.execute("INSERT INTO entities (name) VALUES (?)", (name,))
-        self._conn.commit()
-        return int(cur.lastrowid)  # type: ignore[return-value]
+        with self._db_cursor() as cursor:
+            cur = cursor.execute("INSERT INTO entities (name) VALUES (?)", (name,))
+            return int(cur.lastrowid)  # type: ignore[return-value]
 
     def _link_fact_entity(self, fact_id: int, entity_id: int) -> None:
         """Insert into fact_entities, silently ignore if the link already exists."""
-        self._conn.execute(
-            """
-            INSERT OR IGNORE INTO fact_entities (fact_id, entity_id)
-            VALUES (?, ?)
-            """,
-            (fact_id, entity_id),
-        )
-        self._conn.commit()
+        with self._db_cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO fact_entities (fact_id, entity_id)
+                VALUES (?, ?)
+                """,
+                (fact_id, entity_id),
+            )
 
     def _compute_hrr_vector(self, fact_id: int, content: str) -> None:
         """Compute and store HRR vector for a fact."""
@@ -482,26 +508,27 @@ class MemoryStore:
             entities = [row["name"] for row in rows]
 
             vector = hrr.encode_fact(content, entities, self.hrr_dim)
-            self._conn.execute(
-                "UPDATE facts SET hrr_vector = ? WHERE fact_id = ?",
-                (hrr.phases_to_bytes(vector), fact_id),
-            )
-            self._conn.commit()
+            with self._db_cursor() as cursor:
+                cursor.execute(
+                    "UPDATE facts SET hrr_vector = ? WHERE fact_id = ?",
+                    (hrr.phases_to_bytes(vector), fact_id),
+                )
 
     def _rebuild_bank(self, category: str) -> None:
         """Full rebuild of a category's memory bank from all its fact vectors."""
         with self._lock:
             bank_name = f"cat:{category}"
-            rows = self._conn.execute(
-                "SELECT hrr_vector FROM facts WHERE category = ? AND hrr_vector IS NOT NULL",
-                (category,),
-            ).fetchall()
+            with self._db_cursor() as cursor:
+                rows = cursor.execute(
+                    "SELECT hrr_vector FROM facts WHERE category = ? AND hrr_vector IS NOT NULL",
+                    (category,),
+                ).fetchall()
 
             if not rows:
-                self._conn.execute(
-                    "DELETE FROM memory_banks WHERE bank_name = ?", (bank_name,)
-                )
-                self._conn.commit()
+                with self._db_cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM memory_banks WHERE bank_name = ?", (bank_name,)
+                    )
                 return
 
             vectors = [hrr.bytes_to_phases(row["hrr_vector"]) for row in rows]
@@ -511,19 +538,19 @@ class MemoryStore:
             # Check SNR
             hrr.snr_estimate(self.hrr_dim, fact_count)
 
-            self._conn.execute(
-                """
-                INSERT INTO memory_banks (bank_name, vector, dim, fact_count, updated_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(bank_name) DO UPDATE SET
-                    vector = excluded.vector,
-                    dim = excluded.dim,
-                    fact_count = excluded.fact_count,
-                    updated_at = excluded.updated_at
-                """,
-                (bank_name, hrr.phases_to_bytes(bank_vector), self.hrr_dim, fact_count),
-            )
-            self._conn.commit()
+            with self._db_cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO memory_banks (bank_name, vector, dim, fact_count, updated_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(bank_name) DO UPDATE SET
+                        vector = excluded.vector,
+                        dim = excluded.dim,
+                        fact_count = excluded.fact_count,
+                        updated_at = excluded.updated_at
+                    """,
+                    (bank_name, hrr.phases_to_bytes(bank_vector), self.hrr_dim, fact_count),
+                )
 
     def rebuild_all_vectors(self, dim: int | None = None) -> int:
         """Recompute all HRR vectors + banks from text. For recovery/migration.
@@ -534,9 +561,10 @@ class MemoryStore:
             if dim is not None:
                 self.hrr_dim = dim
 
-            rows = self._conn.execute(
-                "SELECT fact_id, content, category FROM facts"
-            ).fetchall()
+            with self._db_cursor() as cursor:
+                rows = cursor.execute(
+                    "SELECT fact_id, content, category FROM facts"
+                ).fetchall()
 
             categories: set[str] = set()
             for row in rows:
@@ -558,7 +586,9 @@ class MemoryStore:
 
     def close(self) -> None:
         """Close the database connection."""
-        self._conn.close()
+        if self._conn is not None:
+            self._conn.close()
+            self._conn = None
 
     def __enter__(self) -> "MemoryStore":
         return self

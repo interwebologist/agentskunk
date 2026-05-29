@@ -4,10 +4,6 @@ from llm_guard import scan_prompt
 from llm_guard.input_scanners import PromptInjection
 
 
-class GuardrailMetrics:
-    pass
-
-
 class Guardrails:
     def __init__(self):
         self.kill_switch_triggered = False
