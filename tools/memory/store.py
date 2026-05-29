@@ -273,7 +273,8 @@ class MemoryStore:
         with self._lock:
             with self._db_cursor() as cursor:
                 row = cursor.execute(
-                    "SELECT fact_id, trust_score FROM facts WHERE fact_id = ?", (fact_id,)
+                    "SELECT fact_id, trust_score FROM facts WHERE fact_id = ?",
+                    (fact_id,),
                 ).fetchone()
                 if row is None:
                     return False
@@ -549,7 +550,12 @@ class MemoryStore:
                         fact_count = excluded.fact_count,
                         updated_at = excluded.updated_at
                     """,
-                    (bank_name, hrr.phases_to_bytes(bank_vector), self.hrr_dim, fact_count),
+                    (
+                        bank_name,
+                        hrr.phases_to_bytes(bank_vector),
+                        self.hrr_dim,
+                        fact_count,
+                    ),
                 )
 
     def rebuild_all_vectors(self, dim: int | None = None) -> int:
