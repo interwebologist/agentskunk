@@ -100,7 +100,7 @@ async def list_tools():
 
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
-async def chat_completions(request: ChatCompletionRequest):
+async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResponse:
     try:
         session_id = request.user or "default"
 
