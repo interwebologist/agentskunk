@@ -12,8 +12,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from agent.auxiliary_client import call_llm
-from agent.model_metadata import (
+from compression.auxiliary_client import call_llm
+from compression.model_metadata import (
     CHARS_PER_TOKEN,
     get_model_context_length,
     estimate_messages_tokens_rough,
@@ -461,7 +461,7 @@ class ContextCompressor:
                 break
 
         if system_msg:
-            from agent.context_compressor import (
+            from compression.context_compressor import (
                 _content_text_for_contains,
                 _append_text_to_content,
             )

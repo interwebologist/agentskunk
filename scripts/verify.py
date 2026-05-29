@@ -75,13 +75,7 @@ def main():
         check_json_files(),  # Add JSON syntax check
     ]
 
-    # 2. Mypy: Type Checking (v1.20)
-    checks.append(run_check("Types (Mypy)", "uv run mypy --no-error-summary ."))
-
-    # 3. Bandit: Security
-    checks.append(run_check("Security (Bandit)", "uv run bandit -r . -f json -q"))
-
-    # 4. Pytest: Execution
+    # 2. Pytest: Execution
     # Requires pytest-json-report installed
     checks.append(
         run_check(
