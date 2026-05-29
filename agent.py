@@ -1,6 +1,7 @@
-import os
 import json
 import logging
+import os
+from pathlib import Path
 from typing import Any
 from dotenv import load_dotenv
 from openai import OpenAI, InternalServerError
@@ -34,9 +35,9 @@ def load_system_prompt() -> str:
     if env_prompt:
         return env_prompt.strip()
 
-    path = "prompts/system_prompt.md"
-    if os.path.exists(path):
-        with open(path, "r") as f:
+    path = Path("prompts/system_prompt.md")
+    if path.exists():
+        with path.open("r") as f:
             return f.read().strip()
     return ""
 
@@ -122,6 +123,12 @@ def run(prompt: str, max_iterations: int = MAX_ITERATIONS) -> str:
                         }
                     )
                 except Exception as e:
+                    logger.error(
+                        "Tool execution error for %s: %s",
+                        call.id,
+                        str(e),
+                        exc_info=True,
+                    )
                     CHAT_HISTORY.append(
                         {
                             "role": "tool",
@@ -140,10 +147,12 @@ def on_session_end() -> None:
         store = MemoryStore(db_path="~/.skunk/state.db")
         extracted = store.auto_extract_facts(CHAT_HISTORY)
         if extracted > 0:
-            print(f"Auto-extracted {extracted} facts from session")
+            logger.info("Auto-extracted %d facts from session", extracted)
     except Exception as e:
-        print(f"Auto-extraction failed: {e}")
+        logger.error("Auto-extraction failed: %s", e, exc_info=True)
 
 
 if __name__ == "__main__":
-    print(run("Run a bash command that fails and outputs a lot of text."))
+    logging.basicConfig(level=logging.INFO)
+    result = run("Run a bash command that fails and outputs a lot of text.")
+    logger.info("Agent result: %s", result)

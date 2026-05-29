@@ -3,16 +3,18 @@
 CLI Interface for SkunkAgent
 """
 
-import sys
 import argparse
 import cmd
 import logging
 import os
+import sys
 from typing import Dict, List, Optional, Any
 
 from state import SimpleSessionDB
 import agent
 from compression.context_compressor import ContextCompressor
+
+logger = logging.getLogger(__name__)
 
 
 class SimpleCLI(cmd.Cmd):
@@ -50,7 +52,7 @@ class SimpleCLI(cmd.Cmd):
             line = line[1:]
         return super().onecmd(line)
 
-    def do_new(self, args: str):
+    def do_new(self, args: str) -> None:
         """Start a new session: /new [title]"""
         if self.current_session_id:
             self.session_db.end_session(self.current_session_id)
@@ -60,29 +62,29 @@ class SimpleCLI(cmd.Cmd):
         self.current_session_id = session_id
         self.agent_history = []
 
-        print(f"New session started: {session_id}")
+        logger.info("New session started: %s", session_id)
         if title:
-            print(f"Title: {title}")
+            logger.info("Title: %s", title)
 
-    def do_sessions(self, args: str):
+    def do_sessions(self, args: str) -> None:
         """List active sessions: /sessions"""
         sessions = self.session_db.list_sessions(limit=10)
         if not sessions:
-            print("No active sessions found.")
+            logger.info("No active sessions found.")
             return
 
-        print("\nActive sessions:")
-        print("-" * 50)
+        logger.info("Active sessions:")
+        logger.info("-" * 50)
         for session in sessions:
             title = session.get("title") or "(no title)"
             display_id = session.get("display_id", session["id"])
-            print(f"  {display_id} {title}")
-        print()
+            logger.info("  %s %s", display_id, title)
+        logger.info("")
 
-    def do_resume(self, args: str):
+    def do_resume(self, args: str) -> None:
         """Resume a session: /resume <session_id>"""
         if not args.strip():
-            print("Usage: /resume <session_id>")
+            logger.warning("Usage: /resume <session_id>")
             return
 
         search_id = args.strip()
@@ -96,7 +98,7 @@ class SimpleCLI(cmd.Cmd):
                     break
 
         if not session:
-            print(f"Session not found: {search_id}")
+            logger.error("Session not found: %s", search_id)
             return
 
         self.session_db.reopen_session(session["id"])
@@ -105,43 +107,43 @@ class SimpleCLI(cmd.Cmd):
 
         title = session.get("title") or "(no title)"
         display_id = session.get("display_id", session["id"])
-        print(f"Resumed session: {display_id}")
-        print(f"Title: {title}")
+        logger.info("Resumed session: %s", display_id)
+        logger.info("Title: %s", title)
 
-    def do_help(self, args: str):
+    def do_help(self, args: str) -> None:
         """Show help: /help"""
-        print("\nAvailable commands:")
-        print("-" * 50)
-        print("  /new [title]       Start a new chat session")
-        print("  /sessions          List active sessions")
-        print("  /resume <id>       Resume a previous session")
-        print("  /help              Show this help")
-        print("  /quit              Exit the application")
-        print()
-        print("Type your message to chat with the agent.")
+        logger.info("Available commands:")
+        logger.info("-" * 50)
+        logger.info("  /new [title]       Start a new chat session")
+        logger.info("  /sessions          List active sessions")
+        logger.info("  /resume <id>       Resume a previous session")
+        logger.info("  /help              Show this help")
+        logger.info("  /quit              Exit the application")
+        logger.info("")
+        logger.info("Type your message to chat with the agent.")
 
-    def do_quit(self, args: str):
+    def do_quit(self, args: str) -> bool:
         """Exit: /quit"""
-        print("Goodbye!")
+        logger.info("Goodbye!")
         if self.current_session_id:
             self.session_db.end_session(self.current_session_id)
         return True
 
-    def default(self, line: str):
+    def default(self, line: str) -> None:
         """Handle chat messages"""
         if not line.strip():
             return
 
         if self.current_session_id is None:
             if self.auto_session:
-                print("No active session. Creating new session...")
+                logger.info("No active session. Creating new session...")
                 title = None
                 session_id = self.session_db.create_session(title)
                 self.current_session_id = session_id
                 self.agent_history = []
-                print(f"New session started: {session_id}")
+                logger.info("New session started: %s", session_id)
             else:
-                print("No active session. Use /new to start one.")
+                logger.warning("No active session. Use /new to start one.")
                 return
 
         user_msg = line.strip()
@@ -162,7 +164,7 @@ class SimpleCLI(cmd.Cmd):
                 compressed = self.compressor.compress(self.agent_history, tokens)
                 self.agent_history = compressed
 
-        print(response)
+        logger.info("Response: %s", response)
 
     def do_EOF(self, args: str):
         """Handle EOF (Ctrl+D)"""
@@ -189,7 +191,7 @@ def run_single_query(query: str, session_db: SimpleSessionDB) -> str:
     return response
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="SkunkAgent CLI")
     parser.add_argument("-q", "--query", type=str, help="Single query mode")
     parser.add_argument("--resume", type=str, help="Resume specific session")
@@ -199,14 +201,14 @@ def main():
 
     if args.query:
         response = run_single_query(args.query, session_db)
-        print(response)
+        logger.info("Query response: %s", response)
         session_db.close()
         sys.exit(0)
 
     if args.resume:
         session = session_db.get_session(args.resume)
         if not session:
-            print(f"Session not found: {args.resume}")
+            logger.error("Session not found: %s", args.resume)
             session_db.close()
             sys.exit(1)
 
@@ -216,32 +218,32 @@ def main():
 
         title = session.get("title") or "(no title)"
         display_id = session.get("display_id", session["id"])
-        print(f"Resumed session: {display_id}")
-        print(f"Title: {title}")
+        logger.info("Resumed session: %s", display_id)
+        logger.info("Title: %s", title)
 
         cli = SimpleCLI(session_db, auto_session=False)
         cli.current_session_id = current_session_id
         cli.agent_history = agent_history
 
-        print()
-        print("Starting chat...")
+        logger.info("")
+        logger.info("Starting chat...")
         try:
             cli.cmdloop()
         except KeyboardInterrupt:
-            print("\nGoodbye!")
+            logger.info("\nGoodbye!")
             session_db.close()
             sys.exit(0)
 
     cli = SimpleCLI(session_db, auto_session=True)
 
-    print("Starting SkunkAgent CLI...")
-    print(f"Session database: {session_db.db_path}")
-    print()
+    logger.info("Starting SkunkAgent CLI...")
+    logger.info("Session database: %s", session_db.db_path)
+    logger.info("")
 
     try:
         cli.cmdloop()
     except KeyboardInterrupt:
-        print("\nGoodbye!")
+        logger.info("\nGoodbye!")
         session_db.close()
         sys.exit(0)
 
