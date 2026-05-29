@@ -12,8 +12,8 @@ os.environ["OPENAI_API_KEY"] = "test-key"
 os.environ["MODEL_NAME"] = "test-model"
 os.environ["MODEL_CONTEXT_LENGTH"] = "128000"
 
-from agent.context_compressor import ContextCompressor
-from agent.model_metadata import estimate_messages_tokens_rough
+from compression.context_compressor import ContextCompressor
+from compression.model_metadata import estimate_messages_tokens_rough
 
 
 class TestCompressionEdgeCases(unittest.TestCase):

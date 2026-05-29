@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 
 from state import SimpleSessionDB
 import agent
-from agent.context_compressor import ContextCompressor
+from compression.context_compressor import ContextCompressor
 
 
 class SimpleCLI(cmd.Cmd):
@@ -155,7 +155,7 @@ class SimpleCLI(cmd.Cmd):
         self.session_db.append_message(self.current_session_id, "assistant", response)
 
         if self.compressor:
-            from agent.model_metadata import estimate_messages_tokens_rough
+            from compression.model_metadata import estimate_messages_tokens_rough
 
             tokens = estimate_messages_tokens_rough(self.agent_history)
             if self.compressor.should_compress(tokens):

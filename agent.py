@@ -1,13 +1,16 @@
 import os
 import json
+import logging
 from typing import Any
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, InternalServerError
 from tools.registry import registry, discover_builtin_tools
 
 from guardrails import create_guardrails, Guardrails
 
 from tools.memory.store import MemoryStore
+
+logger = logging.getLogger(__name__)
 
 discover_builtin_tools()
 load_dotenv()
@@ -21,6 +24,8 @@ client = OpenAI(
 model = os.getenv("MODEL_NAME", "NVIDIA-Nemotron-3-Super-120B-A12B-UD-Q4_K_XL.gguf")
 
 CHAT_HISTORY: list[dict[str, Any]] = []
+
+MAX_ITERATIONS = 300
 
 
 def load_system_prompt() -> str:
@@ -36,7 +41,7 @@ def load_system_prompt() -> str:
     return ""
 
 
-def run(prompt: str, max_iterations: int = 300) -> str:
+def run(prompt: str, max_iterations: int = MAX_ITERATIONS) -> str:
     global CHAT_HISTORY
 
     if guardrails.is_kill_switch_triggered():
@@ -63,9 +68,39 @@ def run(prompt: str, max_iterations: int = 300) -> str:
 
         iterations += 1
         tools = registry.get_definitions(set(registry.get_all_tool_names()), quiet=True)
-        res = client.chat.completions.create(
-            model=model, messages=CHAT_HISTORY, tools=tools
-        )
+        try:
+            res = client.chat.completions.create(
+                model=model, messages=CHAT_HISTORY, tools=tools
+            )
+        except InternalServerError as e:
+            logger.error("OpenAI API error: %s", str(e), exc_info=True)
+            if "Failed to parse tool call arguments as JSON" in str(e):
+                error_msg = "JSON parsing error: The model returned malformed JSON for tool arguments. Please reformat your request."
+                CHAT_HISTORY.append(
+                    {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": "error_tool_call",
+                                "type": "function",
+                                "function": {
+                                    "name": "error_handler",
+                                    "arguments": "{}",
+                                },
+                            }
+                        ],
+                    }
+                )
+                CHAT_HISTORY.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": "error_tool_call",
+                        "content": json.dumps({"error": error_msg}),
+                    }
+                )
+                return error_msg
+            raise
         msg = res.choices[0].message
 
         CHAT_HISTORY.append(msg.model_dump(exclude_none=True))

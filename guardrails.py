@@ -3,8 +3,10 @@ from typing import Any
 from llm_guard import scan_prompt
 from llm_guard.input_scanners import PromptInjection
 
+
 class GuardrailMetrics:
     pass
+
 
 class Guardrails:
     def __init__(self):
@@ -37,6 +39,6 @@ class Guardrails:
     def is_kill_switch_triggered(self) -> bool:
         return self.kill_switch_triggered
 
+
 def create_guardrails() -> Guardrails:
     return Guardrails()
-
