@@ -1,7 +1,7 @@
 import time
 import uuid
 import json
-import os
+from pathlib import Path
 from typing import List, Optional, Union
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -74,11 +74,12 @@ class ModelList(BaseModel):
 
 
 @app.get("/v1/models", response_model=ModelList)
-async def list_models():
-    models_data = []
+async def list_models() -> ModelList:
+    models_data: list[ModelObject] = []
     try:
-        if os.path.exists("models.json"):
-            with open("models.json", "r") as f:
+        models_path = Path("models.json")
+        if models_path.exists():
+            with models_path.open("r") as f:
                 data = json.load(f)
                 for provider in data.get("providers", {}).values():
                     for m in provider.get("models", []):

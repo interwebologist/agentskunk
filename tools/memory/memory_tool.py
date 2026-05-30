@@ -1,27 +1,36 @@
 """Holographic Memory Tool - fact_store and fact_feedback for nerdface-agent."""
 
 import json
+from dataclasses import dataclass
+from typing import Optional
 from tools.registry import registry
 from .store import MemoryStore
 from .retrieval import FactRetriever
 
-# Global instances (initialized on first use)
-_store = None
-_retriever = None
+
+@dataclass
+class MemoryToolState:
+    """Thread-safe state container for memory tools."""
+
+    store: Optional[MemoryStore] = None
+    retriever: Optional[FactRetriever] = None
 
 
-def _get_store():
-    global _store
-    if _store is None:
-        _store = MemoryStore(db_path="~/.skunk/state.db")
-    return _store
+_state = MemoryToolState()
 
 
-def _get_retriever():
-    global _retriever
-    if _retriever is None:
-        _retriever = FactRetriever(store=_get_store())
-    return _retriever
+def _get_store() -> MemoryStore:
+    """Get or create the MemoryStore instance."""
+    if _state.store is None:
+        _state.store = MemoryStore(db_path="~/.skunk/state.db")
+    return _state.store
+
+
+def _get_retriever() -> FactRetriever:
+    """Get or create the FactRetriever instance."""
+    if _state.retriever is None:
+        _state.retriever = FactRetriever(store=_get_store())
+    return _state.retriever
 
 
 def fact_store(args: dict) -> str:
