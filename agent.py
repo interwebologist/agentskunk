@@ -71,7 +71,7 @@ def run(prompt: str, max_iterations: int = MAX_ITERATIONS) -> str:
         tools = registry.get_definitions(set(registry.get_all_tool_names()), quiet=True)
         try:
             res = client.chat.completions.create(
-                model=model, messages=CHAT_HISTORY, tools=tools
+                model=model, messages=CHAT_HISTORY, tools=tools, timeout=360
             )
         except InternalServerError as e:
             logger.error("OpenAI API error: %s", str(e), exc_info=True)

@@ -119,6 +119,13 @@ class SimpleSessionDB:
                 (session_id,),
             )
 
+    def update_session_title(self, session_id: str, title: str) -> None:
+        with self._db_cursor() as cursor:
+            cursor.execute(
+                "UPDATE sessions SET title = ? WHERE id = ?",
+                (title, session_id),
+            )
+
     def close(self) -> None:
         if self._conn is not None:
             self._conn.close()
