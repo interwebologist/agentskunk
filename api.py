@@ -6,7 +6,7 @@ from typing import List, Optional, Union
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import agent
-from agent import run, guardrails
+from agent import run, guardrails, TOOL_REGISTRY
 from state import SimpleSessionDB
 from tools.registry import registry, discover_builtin_tools
 
@@ -16,6 +16,60 @@ discover_builtin_tools()
 app = FastAPI(title="OpenAI-Compatible Agent API")
 
 session_db = SimpleSessionDB()
+
+
+# --- HITL Request Schemas ---
+class HITLApprovalRequest(BaseModel):
+    tool_name: str
+    tool_args: dict
+    session_id: str
+    user_id: Optional[str] = None
+
+
+class HITLApprovalResponse(BaseModel):
+    approved: bool
+    tool_name: str
+    timestamp: int
+
+
+hitl_approvals: dict[str, dict] = {}
+
+
+@app.post("/v1/hitl/approve")
+async def hitl_approve(request: HITLApprovalRequest):
+    """HITL approval endpoint for API calls."""
+    if os.getenv("HITL_ENABLED", "true").lower() not in ("true", "1", "yes"):
+        raise HTTPException(status_code=403, detail="HITL is disabled")
+
+    tool_cfg = TOOL_REGISTRY.get(request.tool_name, {})
+    if tool_cfg.get("risk") != "high":
+        raise HTTPException(status_code=400, detail="Tool does not require approval")
+
+    key = f"{request.session_id}:{request.tool_name}"
+    if key not in hitl_approvals:
+        raise HTTPException(status_code=404, detail="Approval request not found")
+
+    approval_data = hitl_approvals.pop(key)
+    if approval_data["tool_args"] != request.tool_args:
+        raise HTTPException(status_code=400, detail="Tool arguments mismatch")
+
+    return HITLApprovalResponse(
+        approved=True, tool_name=request.tool_name, timestamp=int(time.time())
+    )
+
+
+@app.get("/v1/hitl/pending")
+async def hitl_pending(session_id: str, user_id: Optional[str] = None):
+    """Get pending HITL approvals for a session."""
+    if os.getenv("HITL_ENABLED", "true").lower() not in ("true", "1", "yes"):
+        return {"pending": []}
+
+    pending = [
+        {"session_id": k.split(":")[0], "tool_name": k.split(":")[1], **v}
+        for k, v in hitl_approvals.items()
+        if k.startswith(f"{session_id}:")
+    ]
+    return {"pending": pending}
 
 
 # --- OpenAI Request Schemas ---
@@ -93,6 +147,42 @@ async def list_models() -> ModelList:
     return ModelList(data=models_data)
 
 
+def check_tool_approvals(
+    messages: List[ChatMessage], session_id: str
+) -> Optional[dict]:
+    """Check if any tool calls require approval and store for later approval."""
+    if os.getenv("HITL_ENABLED", "true").lower() not in ("true", "1", "yes"):
+        return None
+
+    last_msg = messages[-1]
+    if not last_msg.content:
+        return None
+
+    try:
+        data = json.loads(last_msg.content)
+        if isinstance(data, dict) and "tool_calls" in data:
+            for call in data["tool_calls"]:
+                if call.get("type") == "function":
+                    func_name = call["function"]["name"]
+                    tool_cfg = TOOL_REGISTRY.get(func_name, {})
+                    if tool_cfg.get("risk") == "high":
+                        args = json.loads(call["function"]["arguments"])
+                        key = f"{session_id}:{func_name}"
+                        hitl_approvals[key] = {
+                            "tool_args": args,
+                            "tool_call_id": call.get("id"),
+                            "timestamp": int(time.time()),
+                        }
+                        return {
+                            "tool_name": func_name,
+                            "tool_args": args,
+                            "tool_call_id": call.get("id"),
+                            "session_id": session_id,
+                        }
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+    return None
 @app.get("/v1/tools", response_model=List[dict])
 async def list_tools():
     """List all available tools in OpenAI format."""
@@ -132,7 +222,22 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
                 status_code=403, detail=f"Input blocked [{block_type}]: {block_msg}"
             )
 
-        response_text = run(user_prompt)
+        approval_info = check_tool_approvals(request.messages, session_id)
+        if approval_info:
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "message": "Tool requires human approval",
+                    "approval_endpoint": "/v1/hitl/approve",
+                    "pending_approval": approval_info,
+                },
+            )
+
+        def api_approval_func(func_name: str, args: dict) -> bool:
+            key = f"{session_id}:{func_name}"
+            return key not in hitl_approvals
+
+        response_text = run(user_prompt, require_approval=api_approval_func)
 
         session_db.append_message(session_id, "user", user_prompt)
         session_db.append_message(session_id, "assistant", response_text)
