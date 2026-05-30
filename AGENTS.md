@@ -38,3 +38,44 @@
 
 ## Notes
 - To fix deps: uv sync
+
+SYSTEM INVARIANTS: DO NOT VIOLATE UNDER ANY CIRCUMSTANCES
+
+1. FILE SYSTEM INTEGRITY
+- Strictly forbidden: Renaming or appending suffixes to existing files.
+- Mandatory: New files must follow existing project naming conventions.
+- Mandatory: Use Python 3's `pathlib` module for path manipulations instead of legacy `os.path` operations.
+
+2. RESOURCE & STATE MANAGEMENT
+- Mandatory: Use `with` context managers for all DB connections, file handles, network sockets, and threading locks.
+- Mandatory: No mutable global variables. Use classes, thread-safe state containers, or `dataclasses` for managing state.
+
+3. SECURITY & INPUT VALIDATION
+- Mandatory: Sanitize all external inputs and validate data at system boundaries.
+- Strictly forbidden: Using unescaped variables in `subprocess`, `os.system`, or raw SQL queries. Use parameterized queries and secure execution wrappers.
+
+4. ARCHITECTURE & CLEANLINESS
+- Mandatory: All code in production files must be production-ready.
+- Mandatory: Move all test logic and `assert` statements to the `tests/` directory. (Standard assertions should not be used for runtime logic as they compile away with the `-O` flag).
+- Mandatory: Remove all unused imports and dead code. No commented-out code blocks in commits.
+- Mandatory: Adhere strictly to PEP 8 style guidelines (enforced via formatters like Black or Ruff).
+- Mandatory: Include docstrings (PEP 257) for all public modules, classes, and functions.
+
+5. ERROR HANDLING & LOGGING
+- Mandatory: No bare `except:` clauses. Catch specific exception types to avoid silencing `KeyboardInterrupt` or `SystemExit`.
+- Mandatory: Use the `logging` module only. No `print()` statements for system output or debugging in production code.
+- Mandatory: Use exception chaining (`raise NewException from original_exception`) when re-raising to preserve tracebacks.
+
+6. TYPE SAFETY
+- Mandatory: All new functions/methods must include PEP 484 type hints.
+- Note: Type hints are standard for Python 3.5+ and essential for IDE support and static analysis tools (e.g., `mypy`).
+
+7. CONFIGURATION & DEPENDENCIES
+- Mandatory: Extract all hard-coded URLs, keys, and values to `.env` or config files.
+- Mandatory: Explicitly declare all project dependencies and their versions in a `pyproject.toml` or `requirements.txt`.
+
+8. MODERN PYTHON 3 IDIOMS
+- Mandatory: Use f-strings (`f"Hello {name}"`) for string interpolation instead of legacy `%` formatting or `.format()`.
+- Mandatory: Use `@dataclass` (Python 3.7+) to reduce boilerplate for classes that primarily store state.
+- Mandatory: Always use the `is` operator for comparing singletons (e.g., `if x is None:`, `if not flag is True:`).
+
